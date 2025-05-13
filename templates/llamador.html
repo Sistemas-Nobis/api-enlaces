@@ -2,137 +2,403 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Llamador - Nobis Medical</title>
+    <title>Nobis Medical</title>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body {
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f9f9f9;
-            color: #333;
+        /* Main Styles */
+        :root {
+            /* Brand colors */
+            --primary: #1AA538;
+            --primary-light: #3DB859;
+            --primary-dark: #148A2E;
+            --secondary: #ACC948;
+            --secondary-light: #BEDB5A;
+            --secondary-dark: #9AB33E;
+            --gray-dark: #4E5559;
+            --gray: #6F7173;
+            --gray-light: #A9AAAB;
+            --white: #FFFFFF;
+            --light-bg: #F8F9FA;
+            
+            /* Functional colors */
+            --success: var(--primary);
+            --warning: #F0AD4E;
+            --error: #D9534F;
+            --connecting: var(--secondary);
+            
+            /* Spacing system */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            
+            /* Fonts */
+            --font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 
+                           Arial, sans-serif;
+            --font-size-sm: 0.875rem;
+            --font-size-md: 1rem;
+            --font-size-lg: 1.25rem;
+            --font-size-xl: 1.5rem;
+            --font-size-xxl: 2rem;
         }
-        .header-container {
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--light-bg);
+            color: var(--gray-dark);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--space-md);
+        }
+
+        /* Card Styles */
+        .card {
+            background-color: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: var(--space-lg);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: var(--space-md) var(--space-lg);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .card-header h2 {
+            color: var(--primary-dark);
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+        }
+
+        /* Button Styles */
+        .btn {
+            padding: var(--space-sm) var(--space-md);
+            border: none;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            font-size: var(--font-size-sm);
+        }
+
+        .btn-reconnect {
+            background-color: var(--primary);
+            color: var(--white);
+            display: none;
+        }
+
+        .btn-reconnect:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-sound {
+            background-color: var(--secondary);
+            color: var(--gray-dark);
+        }
+
+        .btn-sound:hover {
+            background-color: var(--secondary-dark);
+            color: var(--white);
+        }
+
+        /* Header Styles */
+        .main-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            padding: var(--space-md) 0;
+            margin-bottom: var(--space-lg);
             flex-wrap: wrap;
+            position: relative;
         }
-        .header-title {
-            flex-grow: 1;
+
+        .logo-container {
+            flex: 1;
             text-align: center;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+
+        .logo-container h1 {
+            color: var(--primary);
+            font-size: var(--font-size-xxl);
+            font-weight: 700;
+            margin: 0;
+            position: relative;
+            display: inline-block;
         }
-        th, td {
-            padding: 12px;
-            border: 1px solid #ddd;
-            text-align: left;
+
+        .logo-container h1::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: var(--secondary);
+            border-radius: 50%;
+            top: 0;
+            right: -12px;
         }
-        th {
-            background-color: #f1f1f1;
+
+        .connection-wrapper {
+            display: flex;
+            align-items: center;
         }
-        tr.nuevo {
-            background-color: #e1fbe1;
-            font-weight: bold;
-            box-shadow: 0 0 10px rgba(0, 128, 0, 0.5);
-            animation: fadeShadow 5s forwards;
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            background-color: var(--white);
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: 16px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
-        @keyframes fadeShadow {
-            0% { box-shadow: 0 0 10px rgba(0, 128, 0, 0.5); }
-            100% { box-shadow: none; }
-        }
-        audio {
-            display: none;
-        }
+
         .status-indicator {
             display: inline-block;
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            margin-right: 10px;
+            margin-right: var(--space-sm);
+            transition: background-color 0.3s ease;
         }
+
         .status-connected {
-            background-color: #4CAF50;
+            background-color: var(--success);
+            box-shadow: 0 0 6px var(--success);
         }
+
         .status-disconnected {
-            background-color: #f44336;
+            background-color: var(--error);
+            box-shadow: 0 0 6px var(--error);
         }
+
         .status-connecting {
-            background-color: #FFC107;
+            background-color: var(--connecting);
+            box-shadow: 0 0 6px var(--connecting);
+            animation: pulse 1.5s infinite;
         }
-        #btn-reconnect {
-            padding: 6px 12px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            display: none;
-        }
-        #btn-reconnect:hover {
-            background-color: #45a049;
-        }
+
         #connection-text {
-            margin-right: 10px;
-            font-size: 14px;
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+            color: var(--gray-dark);
         }
+
         .connection-details {
-            font-size: 12px;
-            color: #666;
-            margin-left: 20px;
+            font-size: var(--font-size-sm);
+            color: var(--gray);
+            margin-left: var(--space-sm);
+        }
+
+        .actions-container {
+            display: flex;
+            align-items: center;
+        }
+
+        /* Table Styles */
+        .table-container {
+            overflow-x: auto;
+            padding: var(--space-md);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: var(--font-size-md);
+        }
+
+        th, td {
+            padding: var(--space-md);
+            text-align: left;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--gray-dark);
+            background-color: rgba(0, 0, 0, 0.02);
+            position: sticky;
+            top: 0;
+        }
+
+        tr {
+            transition: background-color 0.3s ease;
+        }
+
+        tr:hover {
+            background-color: rgba(172, 201, 72, 0.05);
+        }
+
+        tr.nuevo {
+            background-color: rgba(26, 165, 56, 0.08);
+            animation: highlightRow 4s forwards;
+            position: relative;
+        }
+
+        tr.nuevo td {
+            position: relative;
+        }
+
+        tr.nuevo td:first-child::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: var(--primary);
+            border-radius: 2px;
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes highlightRow {
+            0% { 
+                background-color: rgba(26, 165, 56, 0.15);
+                box-shadow: 0 0 15px rgba(26, 165, 56, 0.25);
+            }
+            80% { 
+                background-color: rgba(26, 165, 56, 0.05);
+                box-shadow: 0 0 15px rgba(26, 165, 56, 0.05);
+            }
+            100% { 
+                background-color: transparent;
+                box-shadow: none;
+            }
+        }
+
+        /* Media Queries */
+        @media (max-width: 768px) {
+            .main-header {
+                flex-direction: column;
+                gap: var(--space-md);
+            }
+            
+            .connection-wrapper, 
+            .logo-container, 
+            .actions-container {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .logo-container {
+                order: -1;
+            }
+
+            .container {
+                padding: var(--space-sm);
+            }
+            
+            .card {
+                margin-bottom: var(--space-md);
+            }
+
+            th, td {
+                padding: var(--space-sm);
+            }
+            
+            .table-container {
+                padding: var(--space-sm);
+            }
+        }
+
+        @media (max-width: 576px) {
+            html {
+                font-size: 14px;
+            }
+            
+            .card-header {
+                padding: var(--space-sm) var(--space-md);
+            }
+
+            table {
+                font-size: var(--font-size-sm);
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header-container">
-        <div class="selector-container">
-            <span id="connection-status" class="status-indicator status-disconnected"></span>
-            <span id="connection-text">Desconectado</span>
-            <span id="connection-details" class="connection-details"></span>
-        </div>
-        <h1 class="header-title">Movimientos en tiempo real</h1>
-        <div style="width: 200px;"></div>
+    <div class="container">
+        <header class="main-header">
+            <div class="connection-wrapper">
+                <div class="connection-status">
+                    <span id="connection-status" class="status-indicator status-disconnected"></span>
+                    <span id="connection-text">Desconectado</span>
+                </div>
+                <span id="connection-details" class="connection-details"></span>
+                <button id="btn-reconnect" class="btn btn-reconnect">Reconectar</button>
+            </div>
+            
+            <div class="logo-container">
+                <h1>Nobis Medical</h1>
+            </div>
+            
+            <div class="actions-container">
+                <button id="btn-activar-sonido" class="btn btn-sound">Activar sonido</button>
+            </div>
+        </header>
+
+        <main>
+            <div class="card table-card">
+                <div class="card-header">
+                    <!--<h2>Notificaciones</h2>-->
+                </div>
+                <div class="table-container">
+                    <table aria-label="Tabla de movimientos">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <!--<th>Fecha</th>-->
+                                <!--<th>Descripción</th>-->
+                                <th>Box</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-cuerpo">
+                            <!-- Nuevas filas aparecerán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <audio id="sonido-alerta" src="/static/airport_call.mp3" preload="auto" type="audio/mpeg"></audio>
     </div>
 
-    <button id="btn-activar-sonido">Activar sonido</button>
-    <audio id="sonido-alerta" src="/static/airport_call.mp3" preload="auto" type="audio/mpeg"></audio>
-
-    <table aria-label="Tabla de movimientos">
-        <thead>
-            <tr>
-                <th>Nombre</th>
-                <th>Fecha</th>
-                <th>Descripción</th>
-                <th>Box</th>
-            </tr>
-        </thead>
-        <tbody id="tabla-cuerpo">
-            <!-- Nuevas filas aparecerán aquí -->
-        </tbody>
-    </table>
-
-    <button id="btn-reconnect">Reconectar</button>
-
     <script>
-        // Clase para manejar la conexión WebSocket de forma robusta
+        /**
+         * RobustWebSocket Class
+         * A robust WebSocket implementation with automatic reconnection, 
+         * heartbeats, and comprehensive event handling
+         */
         class RobustWebSocket {
             constructor(url, options = {}) {
                 this.url = url;
                 this.options = Object.assign({
-                    reconnectInterval: 1000,      // Tiempo inicial entre intentos de reconexión (ms)
-                    maxReconnectInterval: 30000,  // Tiempo máximo entre intentos (ms)
-                    reconnectDecay: 1.5,          // Factor de incremento para backoff exponencial
-                    maxReconnectAttempts: 0,      // 0 = intentar indefinidamente
-                    heartbeatInterval: 30000,     // Intervalo para enviar ping (ms)
-                    heartbeatMessage: 'ping',     // Mensaje de heartbeat
-                    debug: true                   // Habilitar logs de depuración
+                    reconnectInterval: 1000,      // Initial time between reconnection attempts (ms)
+                    maxReconnectInterval: 30000,  // Maximum time between attempts (ms)
+                    reconnectDecay: 1.5,          // Factor for exponential backoff
+                    maxReconnectAttempts: 0,      // 0 = try indefinitely
+                    heartbeatInterval: 30000,     // Heartbeat ping interval (ms)
+                    heartbeatMessage: 'ping',     // Heartbeat message
+                    debug: true                   // Enable debug logs
                 }, options);
                 
                 this.reconnectAttempts = 0;
@@ -143,18 +409,17 @@
                 this.statusCallback = null;
                 this.messageCallback = null;
                 
-                this.log('Inicializando RobustWebSocket');
+                this.log('Initializing RobustWebSocket');
             }
             
-            // Método para conectar al WebSocket
             connect() {
                 if (this.socket && (this.socket.readyState === WebSocket.CONNECTING || this.socket.readyState === WebSocket.OPEN)) {
-                    this.log('Ya existe una conexión activa o en proceso');
+                    this.log('Connection already active or in progress');
                     return;
                 }
                 
                 this.forceClosed = false;
-                this.log(`Conectando a ${this.url}`);
+                this.log(`Connecting to ${this.url}`);
                 
                 if (this.statusCallback) {
                     this.statusCallback('connecting');
@@ -164,7 +429,7 @@
                     this.socket = new WebSocket(this.url);
                     
                     this.socket.onopen = (event) => {
-                        this.log('Conexión establecida');
+                        this.log('Connection established');
                         this.reconnectAttempts = 0;
                         this.reconnectInterval = this.options.reconnectInterval;
                         this.startHeartbeat();
@@ -175,19 +440,17 @@
                     };
                     
                     this.socket.onmessage = (event) => {
-                        // Si recibimos 'pong', es respuesta a nuestro heartbeat
                         if (event.data === 'pong') {
-                            this.log('Heartbeat recibido');
+                            this.log('Heartbeat received');
                             return;
                         }
                         
-                        // Procesar mensajes normales
                         if (this.messageCallback) {
                             try {
                                 const data = JSON.parse(event.data);
                                 this.messageCallback(data);
                             } catch (e) {
-                                this.log(`Error al procesar mensaje: ${e.message}`);
+                                this.log(`Error processing message: ${e.message}`);
                                 this.messageCallback(event.data);
                             }
                         }
@@ -203,38 +466,36 @@
                         if (!this.forceClosed) {
                             this.scheduleReconnect(event);
                         } else {
-                            this.log('Conexión cerrada manualmente');
+                            this.log('Connection manually closed');
                         }
                     };
                     
                     this.socket.onerror = (error) => {
-                        this.log(`Error en WebSocket: ${error}`);
+                        this.log(`WebSocket error: ${error}`);
                         
                         if (this.statusCallback) {
                             this.statusCallback('error', error);
                         }
                     };
                 } catch (error) {
-                    this.log(`Error al crear WebSocket: ${error.message}`);
-                    console.error('Error completo:', error);
+                    this.log(`Error creating WebSocket: ${error.message}`);
+                    console.error('Complete error:', error);
                     this.scheduleReconnect();
                 }
             }
             
-            // Programar reconexión con backoff exponencial
             scheduleReconnect(event) {
                 if (this.options.maxReconnectAttempts > 0 && this.reconnectAttempts >= this.options.maxReconnectAttempts) {
-                    this.log('Máximo de intentos de reconexión alcanzado');
+                    this.log('Maximum reconnection attempts reached');
                     return;
                 }
                 
                 this.reconnectAttempts++;
                 
-                // Aplicar backoff exponencial con jitter
                 const jitter = 0.1 * this.reconnectInterval * Math.random();
                 const delay = this.reconnectInterval + jitter;
                 
-                this.log(`Programando reconexión en ${Math.round(delay)}ms (intento ${this.reconnectAttempts})`);
+                this.log(`Scheduling reconnection in ${Math.round(delay)}ms (attempt ${this.reconnectAttempts})`);
                 
                 setTimeout(() => {
                     if (!this.forceClosed) {
@@ -242,26 +503,23 @@
                     }
                 }, delay);
                 
-                // Incrementar el intervalo para el próximo intento (backoff exponencial)
                 this.reconnectInterval = Math.min(
                     this.reconnectInterval * this.options.reconnectDecay,
                     this.options.maxReconnectInterval
                 );
             }
             
-            // Iniciar el heartbeat para mantener la conexión activa
             startHeartbeat() {
                 this.stopHeartbeat();
                 
                 this.heartbeatTimer = setInterval(() => {
                     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-                        this.log('Enviando heartbeat');
+                        this.log('Sending heartbeat');
                         this.socket.send(this.options.heartbeatMessage);
                     }
                 }, this.options.heartbeatInterval);
             }
             
-            // Detener el heartbeat
             stopHeartbeat() {
                 if (this.heartbeatTimer) {
                     clearInterval(this.heartbeatTimer);
@@ -269,21 +527,19 @@
                 }
             }
             
-            // Cerrar la conexión
             close() {
                 this.forceClosed = true;
                 this.stopHeartbeat();
                 
                 if (this.socket) {
-                    this.log('Cerrando conexión WebSocket');
+                    this.log('Closing WebSocket connection');
                     this.socket.close();
                 }
             }
             
-            // Enviar mensaje
             send(data) {
                 if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-                    this.log('No se puede enviar mensaje: WebSocket no está abierto');
+                    this.log('Cannot send message: WebSocket not open');
                     return false;
                 }
                 
@@ -295,22 +551,19 @@
                     }
                     return true;
                 } catch (error) {
-                    this.log(`Error al enviar mensaje: ${error.message}`);
+                    this.log(`Error sending message: ${error.message}`);
                     return false;
                 }
             }
             
-            // Registrar callback para cambios de estado
             onStatusChange(callback) {
                 this.statusCallback = callback;
             }
             
-            // Registrar callback para mensajes
             onMessage(callback) {
                 this.messageCallback = callback;
             }
             
-            // Función de log
             log(message) {
                 if (this.options.debug) {
                     console.log(`[WebSocket] ${message}`);
@@ -318,206 +571,179 @@
             }
         }
 
-        // Variables globales
-        const sonido = document.getElementById("sonido-alerta");
-        const cuerpoTabla = document.getElementById("tabla-cuerpo");
-        const connectionStatus = document.getElementById("connection-status");
-        const connectionText = document.getElementById("connection-text");
-        const connectionDetails = document.getElementById("connection-details");
-        const btnReconnect = document.getElementById("btn-reconnect");
-        const btnActivarSonido = document.getElementById("btn-activar-sonido");
+        document.addEventListener('DOMContentLoaded', function() {
+            const sonido = document.getElementById("sonido-alerta");
+            const cuerpoTabla = document.getElementById("tabla-cuerpo");
+            const connectionStatus = document.getElementById("connection-status");
+            const connectionText = document.getElementById("connection-text");
+            const connectionDetails = document.getElementById("connection-details");
+            const btnReconnect = document.getElementById("btn-reconnect");
+            const btnActivarSonido = document.getElementById("btn-activar-sonido");
 
-        const idToSucursal = {
-            1: "casa central",
-            2: "sgo del estero",
-            3: "salta",
-            4: "catamarca"
-        };
+            const idToSucursal = {
+                1: "casa central",
+                2: "sgo del estero",
+                3: "salta",
+                4: "catamarca"
+            };
 
-        let robustSocket = null;
-        let currentSucursal = null;
-        let reconnectAttempts = 0;
-        let deviceId = generateDeviceId();
+            let robustSocket = null;
+            let currentSucursal = null;
+            let reconnectAttempts = 0;
+            let deviceId = generateDeviceId();
 
-        // Generar un ID único para este dispositivo si no existe
-        function generateDeviceId() {
-            let id = localStorage.getItem('deviceId');
-            if (!id) {
-                id = 'device_' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem('deviceId', id);
-            }
-            return id;
-        }
-
-        // Actualizar el estado de la conexión en la UI
-        function updateConnectionStatus(status, details = null) {
-            switch (status) {
-                case "connected":
-                    connectionStatus.className = "status-indicator status-connected";
-                    connectionText.textContent = "Conectado";
-                    btnReconnect.style.display = "none";
-                    connectionDetails.textContent = `ID: ${deviceId.substring(0, 8)}`;
-                    break;
-                case "connecting":
-                    connectionStatus.className = "status-indicator status-connecting";
-                    connectionText.textContent = "Conectando...";
-                    btnReconnect.style.display = "none";
-                    break;
-                case "disconnected":
-                case "error":
-                    connectionStatus.className = "status-indicator status-disconnected";
-                    connectionText.textContent = "Desconectado";
-                    btnReconnect.style.display = "inline-block";
-                    
-                    if (details && details.code) {
-                        connectionDetails.textContent = `Código: ${details.code}`;
-                    } else {
-                        connectionDetails.textContent = `Intentos: ${reconnectAttempts}`;
-                    }
-                    break;
-            }
-        }
-
-        // Conectar al WebSocket de forma robusta
-        function conectarWebSocketRobusto(sucursal) {
-            
-            // Cerrar conexión existente si hay una
-            if (robustSocket) {
-                console.log('Cerrando WebSocket anterior');
-                robustSocket.close();
-                robustSocket = null;
-            }
-            
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws/${encodeURIComponent(sucursal.toLowerCase())}`;
-            console.log(`Conectando a WebSocket robusto: ${wsUrl}`);
-
-            // Agregar esto antes de crear el WebSocket
-            console.log('URL de la página:', window.location.href);
-            console.log('Host:', window.location.host);
-            console.log('Protocolo:', window.location.protocol);
-            console.log('URL del WebSocket:', wsUrl);
-            
-            // Crear nueva instancia de WebSocket robusto
-            robustSocket = new RobustWebSocket(wsUrl, {
-                reconnectInterval: 2000,       // Empezar con 2 segundos
-                maxReconnectInterval: 30000,   // Máximo 30 segundos entre intentos
-                heartbeatInterval: 25000,      // Enviar ping cada 25 segundos
-                debug: true                    // Habilitar logs
-            });
-            
-            // Manejar cambios de estado
-            robustSocket.onStatusChange((status, event) => {
-                console.log(`Estado del WebSocket: ${status}`);
-                reconnectAttempts = robustSocket.reconnectAttempts;
-                updateConnectionStatus(status, event);
-                
-                if (status === 'connected') {
-                    // Limpiar la tabla al reconectar
-                    cuerpoTabla.innerHTML = '';
+            function generateDeviceId() {
+                let id = localStorage.getItem('deviceId');
+                if (!id) {
+                    id = 'device_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('deviceId', id);
                 }
-            });
-            
-            // Manejar mensajes recibidos
-            robustSocket.onMessage((data) => {
-                console.log('Mensaje recibido del WebSocket:', data);
-                procesarMensaje(data);
-            });
-            
-            // Iniciar conexión
-            robustSocket.connect();
-            currentSucursal = sucursal;
-            
-            // Agregar detector de visibilidad para reconectar cuando la página vuelve a ser visible
-            document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible' && robustSocket) {
-                    console.log('Página visible, verificando conexión WebSocket');
-                    if (!robustSocket.socket || robustSocket.socket.readyState !== WebSocket.OPEN) {
-                        console.log('Reconectando WebSocket después de cambio de visibilidad');
+                return id;
+            }
+
+            function updateConnectionStatus(status, details = null) {
+                switch (status) {
+                    case "connected":
+                        connectionStatus.className = "status-indicator status-connected";
+                        connectionText.textContent = "Conectado";
+                        btnReconnect.style.display = "none";
+                        break;
+                    case "connecting":
+                        connectionStatus.className = "status-indicator status-connecting";
+                        connectionText.textContent = "Conectando...";
+                        btnReconnect.style.display = "none";
+                        break;
+                    case "disconnected":
+                    case "error":
+                        connectionStatus.className = "status-indicator status-disconnected";
+                        connectionText.textContent = "Desconectado";
+                        btnReconnect.style.display = "inline-block";
+                        break;
+                }
+            }
+
+            function conectarWebSocketRobusto(sucursal) {
+                if (robustSocket) {
+                    console.log('Closing previous WebSocket');
+                    robustSocket.close();
+                    robustSocket = null;
+                }
+                
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/ws/${encodeURIComponent(sucursal.toLowerCase())}`;
+                console.log(`Connecting to WebSocket: ${wsUrl}`);
+                
+                robustSocket = new RobustWebSocket(wsUrl, {
+                    reconnectInterval: 2000,
+                    maxReconnectInterval: 30000,
+                    heartbeatInterval: 25000,
+                    debug: true
+                });
+                
+                robustSocket.onStatusChange((status, event) => {
+                    console.log(`WebSocket status: ${status}`);
+                    reconnectAttempts = robustSocket.reconnectAttempts;
+                    updateConnectionStatus(status, event);
+                    
+                    if (status === 'connected') {
+                        cuerpoTabla.innerHTML = '';
+                    }
+                });
+                
+                robustSocket.onMessage((data) => {
+                    console.log('Message received from WebSocket:', data);
+                    procesarMensaje(data);
+                });
+                
+                robustSocket.connect();
+                currentSucursal = sucursal;
+                
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible' && robustSocket) {
+                        console.log('Page visible, checking WebSocket connection');
+                        if (!robustSocket.socket || robustSocket.socket.readyState !== WebSocket.OPEN) {
+                            console.log('Reconnecting WebSocket after visibility change');
+                            robustSocket.connect();
+                        }
+                    }
+                });
+                
+                window.addEventListener('online', () => {
+                    console.log('Network available, reconnecting WebSocket');
+                    if (robustSocket) {
                         robustSocket.connect();
                     }
+                });
+
+                return robustSocket;
+            }
+
+            function procesarMensaje(data) {
+                const filaAnterior = cuerpoTabla.querySelector('tr.nuevo');
+                if (filaAnterior) filaAnterior.classList.remove('nuevo');
+
+                const fila = document.createElement("tr");
+                fila.classList.add("nuevo");
+                fila.innerHTML = `
+                    <td>${data.name}</td>
+                    <td>${data.box}</td>
+                `;
+                //<td>${data.fecha}</td>
+                //<td>${data.descripcion || ''}</td>
+                cuerpoTabla.prepend(fila);
+
+                try {
+                    sonido.pause();
+                    sonido.currentTime = 0;
+                    sonido.play().catch(err => console.warn("Could not play audio:", err));
+                } catch (error) {
+                    console.warn("Error playing sound:", error);
+                }
+
+                const filas = cuerpoTabla.querySelectorAll("tr");
+                if (filas.length > 5) filas[5].remove();
+            }
+
+            function obtenerIdDesdeURL() {
+                const partes = window.location.pathname.split('/');
+                return parseInt(partes[partes.length - 1]);
+            }
+
+            window.addEventListener('load', function() {
+                const id = obtenerIdDesdeURL();
+                const sucursal = idToSucursal[id];
+
+                if (sucursal) {
+                    conectarWebSocketRobusto(sucursal);
+                } else {
+                    console.error("Invalid branch or not configured for this ID.");
+                    alert("Sucursal no válida o no configurada para este ID.");
                 }
             });
-            
-            // Agregar detector de conexión de red
-            window.addEventListener('online', () => {
-                console.log('Red disponible, reconectando WebSocket');
+
+            btnActivarSonido.addEventListener("click", function() {
+                sonido.play()
+                    .then(() => {
+                        sonido.pause();
+                        sonido.currentTime = 0;
+                        btnActivarSonido.style.display = "none";
+                    })
+                    .catch(err => {
+                        console.warn("Could not activate sound:", err);
+                    });
+            });
+
+            btnReconnect.addEventListener("click", function() {
+                if (currentSucursal) {
+                    conectarWebSocketRobusto(currentSucursal);
+                }
+            });
+
+            window.addEventListener('beforeunload', () => {
                 if (robustSocket) {
-                    robustSocket.connect();
+                    robustSocket.close();
                 }
             });
-
-            return robustSocket;
-        }
-
-        // Procesar mensaje recibido
-        function procesarMensaje(data) {
-            const filaAnterior = cuerpoTabla.querySelector('tr.nuevo');
-            if (filaAnterior) filaAnterior.classList.remove('nuevo');
-
-            const fila = document.createElement("tr");
-            fila.classList.add("nuevo");
-            fila.innerHTML = `
-                <td>${data.name}</td>
-                <td>${data.fecha}</td>
-                <td>${data.descripcion || ''}</td>
-                <td>${data.box}</td>
-            `;
-            cuerpoTabla.prepend(fila);
-
-            try {
-                sonido.pause();
-                sonido.currentTime = 0;
-                sonido.play().catch(err => console.warn("Audio no pudo reproducirse:", err));
-            } catch (error) {
-                console.warn("Error al reproducir sonido:", error);
-            }
-
-            const filas = cuerpoTabla.querySelectorAll("tr");
-            if (filas.length > 5) filas[5].remove();
-        }
-
-        // Obtener ID de sucursal desde la URL
-        function obtenerIdDesdeURL() {
-            const partes = window.location.pathname.split('/');
-            return parseInt(partes[partes.length - 1]);
-        }
-
-        // Inicialización al cargar la página
-        window.addEventListener('load', function () {
-            const id = obtenerIdDesdeURL();
-            const sucursal = idToSucursal[id];
-
-            if (sucursal) {
-                conectarWebSocketRobusto(sucursal);
-            } else {
-                alert("Sucursal no válida o no configurada para este ID.");
-            }
-        });
-
-        // Activar sonido
-        btnActivarSonido.addEventListener("click", function () {
-            sonido.play().then(() => {
-                sonido.pause();
-                sonido.currentTime = 0;
-                btnActivarSonido.style.display = "none";  // Oculta el botón tras activación
-            }).catch(err => {
-                console.warn("No se pudo activar el sonido:", err);
-            });
-        });
-
-        // Reconectar manualmente
-        btnReconnect.addEventListener("click", function () {
-            if (currentSucursal) {
-                conectarWebSocketRobusto(currentSucursal);
-            }
-        });
-
-        // Manejar cierre de la ventana
-        window.addEventListener('beforeunload', () => {
-            if (robustSocket) {
-                robustSocket.close();
-            }
         });
     </script>
 </body>

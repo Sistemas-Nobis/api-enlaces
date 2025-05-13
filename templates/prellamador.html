@@ -1,983 +1,856 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pre-Llamador - Nobis Medical</title>
-    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    <!-- Agrego la fuente Inter desde Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
     <style>
-        /* Reset básico y tipografía */
+      /* Reset básico y tipografía */
+      :root {
+        --color-primary: #0066cc;
+        --color-primary-hover: #004999;
+        --color-success: #2a6a2a;
+        --color-warning: #856404;
+        --color-error: #721c24;
+        --color-background: #ffffff;
+        --color-text: #333333;
+        --color-border: #dddddd;
+      }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: var(--color-background);
+        color: var(--color-text);
+        transition: background-color 0.3s, color 0.3s;
+        line-height: 1.5;
+      }
+
+      /* Modo oscuro */
+      body.dark-mode {
+        --color-background: #121212;
+        --color-text: #eeeeee;
+        --color-border: #444444;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+
+      /* Encabezados */
+      h1, h2, h3 {
+        margin-top: 0;
+        color: var(--color-text);
+      }
+
+      h1 {
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      /* Botón de modo oscuro */
+      #darkModeToggle {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        background: var(--color-primary);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background 0.3s;
+        z-index: 100;
+      }
+
+      #darkModeToggle:hover {
+        background: var(--color-primary-hover);
+      }
+
+      /* Panel de configuración */
+      .settings-panel {
+        background-color: #f5f5f5;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+      }
+
+      .dark-mode .settings-panel {
+        background-color: #2d2d2d;
+      }
+
+      .settings-panel.settings-active {
+        background-color: #e8f5e9;
+        border: 1px solid #c8e6c9;
+      }
+
+      .dark-mode .settings-panel.settings-active {
+        background-color: #1b5e20;
+        border-color: #2e7d32;
+      }
+
+      /* Formularios */
+      .form-group {
+        margin-bottom: 1rem;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--color-text);
+      }
+
+      input[type="text"],
+      select {
+        width: 100%;
+        max-width: 300px;
+        padding: 0.5rem;
+        border: 1px solid var(--color-border);
+        border-radius: 0.25rem;
+        font-family: inherit;
+        font-size: 1rem;
+        background-color: var(--color-background);
+        color: var(--color-text);
+      }
+
+      .dark-mode input[type="text"],
+      .dark-mode select {
+        background-color: #333;
+        border-color: #555;
+      }
+
+      /* Tabla de registros */
+      .table-container {
+        overflow-x: auto;
+        margin-bottom: 2rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        background-color: var(--color-background);
+      }
+
+      th, td {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        border: 1px solid var(--color-border);
+      }
+
+      th {
+        background-color: #f5f5f5;
+        font-weight: 600;
+      }
+
+      .dark-mode th {
+        background-color: #2d2d2d;
+      }
+
+      tr.registro-llamado {
+        background-color: #ffebee;
+      }
+
+      .dark-mode tr.registro-llamado {
+        background-color: #4a1c1c;
+      }
+
+      /* Botones */
+      button {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s ease;
+      }
+
+      .btn-primary {
+        background-color: var(--color-primary);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background-color: var(--color-primary-hover);
+      }
+
+      .btn-warning {
+        background-color: #ffc107;
+        color: #000;
+      }
+
+      .btn-warning:hover {
+        background-color: #e0a800;
+      }
+
+      /* Filtros */
+      .filtros {
+        background-color: #f5f5f5;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .dark-mode .filtros {
+        background-color: #2d2d2d;
+      }
+
+      .filtros label {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 1.5rem;
+        cursor: pointer;
+      }
+
+      .filtros input[type="radio"] {
+        margin-right: 0.5rem;
+      }
+
+      /* Estado de conexión */
+      .status-indicator {
+        position: fixed;
+        bottom: 1rem;
+        right: 1rem;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .status-connected {
+        background-color: #c8e6c9;
+        color: var(--color-success);
+      }
+
+      .status-disconnected {
+        background-color: #fff3cd;
+        color: var(--color-warning);
+      }
+
+      .status-error {
+        background-color: #f8d7da;
+        color: var(--color-error);
+      }
+
+      .dark-mode .status-connected {
+        background-color: #1b5e20;
+        color: #ffffff;
+      }
+
+      .dark-mode .status-disconnected {
+        background-color: #856404;
+        color: #ffffff;
+      }
+
+      .dark-mode .status-error {
+        background-color: #721c24;
+        color: #ffffff;
+      }
+
+      /* Animaciones */
+      @keyframes highlight {
+        0% { background-color: #12da34; }
+        100% { background-color: transparent; }
+      }
+
+      .dark-mode .elemento-animado {
+        animation: highlight 1s ease-in-out;
+        }
+
+      .new-record {
+        animation: highlight 2s ease-in-out;
+      }
+
+      /* Utilidades */
+      .hidden {
+        display: none !important;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+
+      .status-dot.connected {
+        background-color: #4caf50;
+      }
+
+      .status-dot.disconnected {
+        background-color: #ff9800;
+      }
+
+      .status-dot.error {
+        background-color: #f44336;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
         body {
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #fff;
-            color: #333;
-            transition: background-color 0.3s, color 0.3s;
+          padding: 10px;
         }
 
-        /* Modo oscuro */
-        body.dark-mode {
-            background-color: #121212;
-            color: #eee;
+        .container {
+          padding: 0 10px;
         }
 
-        h1, h2, h3 {
-            margin-top: 0;
-        }
-
-        /* Estilo para el botón de modo oscuro */
-        #darkModeToggle {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: #0066cc;
-            color: #fff;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background 0.3s;
-        }
-        #darkModeToggle:hover {
-            background: #004999;
-        }
-
-        /* Estilos generales */
-        .hidden {
-            display: none;
-        }
-
-        table {
-            width: 100%;
-            margin-top: 20px;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            border: 1px solid #ddd;
-        }
-
-        /* Colores en modo oscuro para la tabla */
-        body.dark-mode table {
-            border-color: #444;
-        }
-        body.dark-mode th {
-            background-color: #222;
-        }
-        body.dark-mode td {
-            border-color: #444;
-        }
-
-        /* Encabezado y componentes */
-        h1 {
-            font-weight: 700;
-        }
-        h2, h3 {
-            font-weight: 500;
-        }
-
-        /* Estilo para panel de configuración */
-        .settings-panel {
-            background-color: #f0f0f0;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            transition: background-color 0.3s;
-        }
-
-        body.dark-mode .settings-panel {
-            background-color: #2c2c2c;
-        }
-
-        .settings-active {
-            background-color: #e0f7e0;
-            border: 1px solid #c3e6c3;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-
-        input[type="text"], select {
-            width: calc(50% - 20px);
-            padding: 8px 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-family: 'Inter', sans-serif;
-            font-size: 14px;
-        }
-
-        button {
-            padding: 8px 16px;
-            background-color: #0066cc;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background 0.3s;
-        }
-
-        button:hover {
-            background-color: #004999;
-        }
-
-        /* Filtros y botones */
-        .filtros {
-            margin: 15px 0;
-            padding: 10px;
-            background-color: #f9f9f9;
-            border-radius: 8px;
-        }
-
-        body.dark-mode .filtros {
-            background-color: #333;
+        input[type="text"],
+        select {
+          max-width: 100%;
         }
 
         .filtros label {
-            margin-right: 15px;
+          display: block;
+          margin-bottom: 0.5rem;
         }
 
-        /* Estado de WebSocket indicator */
-        .status-indicator {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            padding: 8px 14px;
-            border-radius: 5px;
-            font-size: 14px;
-            z-index: 1000;
-            font-weight: 500;
-            transition: background-color 0.3s;
-        }
-        .status-connected {
-            background-color: #c3e6c3;
-            color: #2a6a2a;
-        }
-        .status-disconnected {
-            background-color: #f8d7da;
-            color: #721c24;
+        .table-container {
+          margin: 0 -10px;
         }
 
-        /* Estilo para registros llamando */
-        .registro-llamado {
-            background-color: #ff0000;
+        table {
+          font-size: 0.875rem;
         }
 
-        /* Animacion para nuevos registros */
-        @keyframes highlight {
-            0% { background-color: #ffffcc; }
-            100% { background-color: transparent; }
+        th, td {
+          padding: 0.5rem;
         }
-
-        .new-record {
-            animation: highlight 2s ease-in-out;
-        }
+      }
     </style>
-</head>
-<body>
-    <!-- Botón para modo oscuro -->
-    <button id="darkModeToggle">Modo Oscuro</button>
-    <h1>Pre-Llamador</h1>
+  </head>
+  <body>
+    <div class="container">
+      <button id="darkModeToggle" aria-label="Alternar modo oscuro">
+        Modo Oscuro
+      </button>
 
-    <div id="settingsPanel" class="settings-panel">
+      <h1>Pre-Llamador</h1>
+
+      <div id="settingsPanel" class="settings-panel">
         <h2>Configuración</h2>
-        <form id="configForm" method="post" action="/pre-llamador/1">
-            <label for="box">Box:</label>
-            <input type="text" id="boxInput" name="box" required>
+        <form id="configForm">
+          <div class="form-group">
+            <label for="boxInput">Box:</label>
+            <input type="text" id="boxInput" required>
+          </div>
 
-            <label for="sucursal">Sucursal:</label>
-            <select id="sucursalInput" name="sucursal" required>
-                <option value="casa central">Casa Central</option>
-                <option value="Catamarca">Catamarca</option>
-                <option value="Salta">Salta</option>
-                <option value="Sgo del Estero">Sgo del Estero</option>
+          <div class="form-group">
+            <label for="sucursalInput">Sucursal:</label>
+            <select id="sucursalInput" required>
+              <option value="casa central">Casa Central</option>
+              <option value="Catamarca">Catamarca</option>
+              <option value="Salta">Salta</option>
+              <option value="Sgo del Estero">Sgo del Estero</option>
             </select>
+          </div>
 
-            <button type="submit">Guardar Configuración</button>
+          <button type="submit" class="btn-primary">Guardar Configuración</button>
         </form>
-    </div>
+      </div>
 
-    <div id="activeSettings" class="settings-panel settings-active hidden">
-        <h3>Configuración Actual</h3>
-        <p>Box: <span id="currentBox"></span> | Sucursal: <span id="currentSucursal"></span></p>
-        <button id="changeSettings">Cambiar</button>
-    </div>
+      <div id="activeSettings" class="settings-panel settings-active hidden">
+        <div class="flex justify-between items-center">
+          <div>
+            <h3>Configuración Actual</h3>
+            <p>Box: <span id="currentBox"></span> | Sucursal: <span id="currentSucursal"></span></p>
+          </div>
+          <button id="changeSettings" class="btn-primary">Cambiar</button>
+        </div>
+      </div>
 
-    <h2>Registros disponibles</h2>
-    
-    <div class="filtros">
+      <div class="filtros">
         <label>
-            <input type="radio" name="filtro" value="todos" checked> Mostrar todos
+          <input type="radio" name="filtro" value="todos" checked> Mostrar todos
         </label>
         <label>
-            <input type="radio" name="filtro" value="pendientes"> Solo pendientes
+          <input type="radio" name="filtro" value="pendientes"> Solo pendientes
         </label>
         <label>
-            <input type="radio" name="filtro" value="llamados"> Solo llamados
+          <input type="radio" name="filtro" value="llamados"> Solo llamados
         </label>
-    </div>
-    
-    <form id="llamarForm" method="post" action="/llamar/1">
-        <input type="hidden" id="boxHidden" name="box">
-        <input type="hidden" id="sucursalHidden" name="sucursal">
-        <table border="1">
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Dni</th>
-                    <th>Fecha</th>
-                    <th>Sucursal</th>
-                    <th>Estado</th>
-                    <th>Acción</th>
-                </tr>
-            </thead>
-            <tbody id="registrosTabla">
-                {% for r in registros %}
-                <tr 
-                    data-estado="{% if r.llamado %}llamado{% else %}pendiente{% endif %}" 
-                    data-sucursal="{{ r.sucursal }}"
-                    data-id="{{ r.id }}"
-                    {% if r.llamado or r.bloqueado %}class="registro-llamado"{% endif %}
-                >
-                    <td>{{ r.nombre }}</td>
-                    <td>{{ r.dni }}</td>
-                    <td>{{ r.fecha }}</td>
-                    <td>{{ r.sucursal }}</td>
-                    <td>
-                        {% if r.llamado or r.bloqueado %}
-                            <span class="box-info">Llamado en Box: {{ r.box_llamado }}</span>
-                        {% else %}
-                            Pendiente
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if not r.llamado and not r.bloqueado %}
-                            <button name="registro_id" value="{{ r.id }}" type="submit" class="btn-llamar">Llamar</button>
-                        {% else %}
-                            <span style="color:#000000; font-weight:bold;">Ya llamado </span>
-                            <button type="button" class="btn-repetir" data-registro-id="{{ r.id }}" data-box="{{ r.box_llamado | default('') }}" data-sucursal="{{ r.sucursal | default('') }}">Repetir</button>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
+      </div>
+
+      <h2>Registros disponibles</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>DNI</th>
+              <th>Fecha</th>
+              <th>Sucursal</th>
+              <th>Estado</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="registrosTabla"></tbody>
         </table>
-    </form>
+      </div>
 
-    <!-- Indicador de estado de WebSocket -->
-    <div id="wsStatus" class="status-indicator status-disconnected">Desconectado</div>
-    
+      <div id="wsStatus" class="status-indicator status-disconnected">
+        <span class="status-dot disconnected"></span>
+        <span>Desconectado</span>
+      </div>
+    </div>
+
     <script>
-        // Variables globales
-        let robustSocket = null;
-        let reconnectAttempts = 0;
-        const maxReconnectAttempts = 5;
-
-        const toggleDarkModeBtn = document.getElementById('darkModeToggle');
-
-        // Clase para manejar la conexión WebSocket de forma robusta
-        class RobustWebSocket {
-            constructor(url, options = {}) {
-                this.url = url;
-                this.options = Object.assign({
-                    reconnectInterval: 1000,      // Tiempo inicial entre intentos de reconexión (ms)
-                    maxReconnectInterval: 30000,  // Tiempo máximo entre intentos (ms)
-                    reconnectDecay: 1.5,          // Factor de incremento para backoff exponencial
-                    maxReconnectAttempts: 0,      // 0 = intentar indefinidamente
-                    heartbeatInterval: 30000,     // Intervalo para enviar ping (ms)
-                    heartbeatMessage: 'ping',     // Mensaje de heartbeat
-                    debug: true                   // Habilitar logs de depuración
-                }, options);
-                
-                this.reconnectAttempts = 0;
-                this.reconnectInterval = this.options.reconnectInterval;
-                this.heartbeatTimer = null;
-                this.socket = null;
-                this.forceClosed = false;
-                this.statusCallback = null;
-                this.messageCallback = null;
-                
-                this.log('Inicializando RobustWebSocket');
-            }
-            
-            // Método para conectar al WebSocket
-            connect() {
-                if (this.socket && (this.socket.readyState === WebSocket.CONNECTING || this.socket.readyState === WebSocket.OPEN)) {
-                    this.log('Ya existe una conexión activa o en proceso');
-                    return;
-                }
-                
-                this.forceClosed = false;
-                this.log(`Conectando a ${this.url}`);
-                
-                try {
-                    this.socket = new WebSocket(this.url);
-                    
-                    this.socket.onopen = (event) => {
-                        this.log('Conexión establecida');
-                        this.reconnectAttempts = 0;
-                        this.reconnectInterval = this.options.reconnectInterval;
-                        this.startHeartbeat();
-                        
-                        if (this.statusCallback) {
-                            this.statusCallback('connected');
-                        }
-                    };
-                    
-                    this.socket.onmessage = (event) => {
-                        // Si recibimos 'pong', es respuesta a nuestro heartbeat
-                        if (event.data === 'pong') {
-                            this.log('Heartbeat recibido');
-                            return;
-                        }
-                        
-                        // Procesar mensajes normales
-                        if (this.messageCallback) {
-                            try {
-                                const data = JSON.parse(event.data);
-                                this.messageCallback(data);
-                            } catch (e) {
-                                this.log(`Error al procesar mensaje: ${e.message}`);
-                                this.messageCallback(event.data);
-                            }
-                        }
-                    };
-                    
-                    this.socket.onclose = (event) => {
-                        this.stopHeartbeat();
-                        
-                        if (this.statusCallback) {
-                            this.statusCallback('disconnected', event);
-                        }
-                        
-                        if (!this.forceClosed) {
-                            this.scheduleReconnect(event);
-                        } else {
-                            this.log('Conexión cerrada manualmente');
-                        }
-                    };
-                    
-                    this.socket.onerror = (error) => {
-                        this.log(`Error en WebSocket: ${error}`);
-                        
-                        if (this.statusCallback) {
-                            this.statusCallback('error', error);
-                        }
-                    };
-                } catch (error) {
-                    this.log(`Error al crear WebSocket: ${error.message}`);
-                    this.scheduleReconnect();
-                }
-            }
-            
-            // Programar reconexión con backoff exponencial
-            scheduleReconnect(event) {
-                if (this.options.maxReconnectAttempts > 0 && this.reconnectAttempts >= this.options.maxReconnectAttempts) {
-                    this.log('Máximo de intentos de reconexión alcanzado');
-                    return;
-                }
-                
-                this.reconnectAttempts++;
-                
-                // Aplicar backoff exponencial con jitter
-                const jitter = 0.1 * this.reconnectInterval * Math.random();
-                const delay = this.reconnectInterval + jitter;
-                
-                this.log(`Programando reconexión en ${Math.round(delay)}ms (intento ${this.reconnectAttempts})`);
-                
-                setTimeout(() => {
-                    if (!this.forceClosed) {
-                        this.connect();
-                    }
-                }, delay);
-                
-                // Incrementar el intervalo para el próximo intento (backoff exponencial)
-                this.reconnectInterval = Math.min(
-                    this.reconnectInterval * this.options.reconnectDecay,
-                    this.options.maxReconnectInterval
-                );
-            }
-            
-            // Iniciar el heartbeat para mantener la conexión activa
-            startHeartbeat() {
-                this.stopHeartbeat();
-                
-                this.heartbeatTimer = setInterval(() => {
-                    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-                        this.log('Enviando heartbeat');
-                        this.socket.send(this.options.heartbeatMessage);
-                    }
-                }, this.options.heartbeatInterval);
-            }
-            
-            // Detener el heartbeat
-            stopHeartbeat() {
-                if (this.heartbeatTimer) {
-                    clearInterval(this.heartbeatTimer);
-                    this.heartbeatTimer = null;
-                }
-            }
-            
-            // Cerrar la conexión
-            close() {
-                this.forceClosed = true;
-                this.stopHeartbeat();
-                
-                if (this.socket) {
-                    this.log('Cerrando conexión WebSocket');
-                    this.socket.close();
-                }
-            }
-            
-            // Enviar mensaje
-            send(data) {
-                if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-                    this.log('No se puede enviar mensaje: WebSocket no está abierto');
-                    return false;
-                }
-                
-                try {
-                    if (typeof data === 'object') {
-                        this.socket.send(JSON.stringify(data));
-                    } else {
-                        this.socket.send(data);
-                    }
-                    return true;
-                } catch (error) {
-                    this.log(`Error al enviar mensaje: ${error.message}`);
-                    return false;
-                }
-            }
-            
-            // Registrar callback para cambios de estado
-            onStatusChange(callback) {
-                this.statusCallback = callback;
-            }
-            
-            // Registrar callback para mensajes
-            onMessage(callback) {
-                this.messageCallback = callback;
-            }
-            
-            // Función de log
-            log(message) {
-                if (this.options.debug) {
-                    console.log(`[WebSocket] ${message}`);
-                }
-            }
+      // Clase RobustWebSocket para manejar la conexión WebSocket
+      class RobustWebSocket {
+        constructor(url, options = {}) {
+          this.url = url;
+          this.options = {
+            reconnectInterval: options.reconnectInterval || 2000,
+            maxReconnectInterval: options.maxReconnectInterval || 30000,
+            reconnectDecay: options.reconnectDecay || 1.5,
+            maxReconnectAttempts: options.maxReconnectAttempts || 0,
+            heartbeatInterval: options.heartbeatInterval || 25000,
+            heartbeatMessage: options.heartbeatMessage || 'ping',
+            debug: options.debug || false
+          };
+          
+          this.socket = null;
+          this.reconnectAttempts = 0;
+          this.reconnectInterval = this.options.reconnectInterval;
+          this.heartbeatTimer = null;
+          this.forceClosed = false;
+          this.statusCallback = null;
+          this.messageCallback = null;
         }
 
-        // Verificar si hay preferencia guardada para el modo oscuro
+        connect() {
+          if (this.socket && (this.socket.readyState === WebSocket.CONNECTING || this.socket.readyState === WebSocket.OPEN)) {
+            return;
+          }
+          
+          this.forceClosed = false;
+          
+          try {
+            this.socket = new WebSocket(this.url);
+            
+            this.socket.onopen = () => {
+              this.reconnectAttempts = 0;
+              this.reconnectInterval = this.options.reconnectInterval;
+              this.startHeartbeat();
+              
+              if (this.statusCallback) {
+                this.statusCallback('connected');
+              }
+            };
+            
+            this.socket.onmessage = (event) => {
+              if (event.data === 'pong') {
+                return;
+              }
+              
+              if (this.messageCallback) {
+                try {
+                  const data = JSON.parse(event.data);
+                  this.messageCallback(data);
+                } catch (e) {
+                  this.messageCallback(event.data);
+                }
+              }
+            };
+            
+            this.socket.onclose = (event) => {
+              this.stopHeartbeat();
+              
+              if (this.statusCallback) {
+                this.statusCallback('disconnected', event);
+              }
+              
+              if (!this.forceClosed) {
+                this.scheduleReconnect(event);
+              }
+            };
+            
+            this.socket.onerror = (error) => {
+              if (this.statusCallback) {
+                this.statusCallback('error', error);
+              }
+            };
+          } catch (error) {
+            this.scheduleReconnect();
+          }
+        }
+
+        scheduleReconnect() {
+          if (this.options.maxReconnectAttempts > 0 && this.reconnectAttempts >= this.options.maxReconnectAttempts) {
+            return;
+          }
+          
+          this.reconnectAttempts++;
+          
+          const jitter = 0.1 * this.reconnectInterval * Math.random();
+          const delay = this.reconnectInterval + jitter;
+          
+          setTimeout(() => {
+            if (!this.forceClosed) {
+              this.connect();
+            }
+          }, delay);
+          
+          this.reconnectInterval = Math.min(
+            this.reconnectInterval * this.options.reconnectDecay,
+            this.options.maxReconnectInterval
+          );
+        }
+
+        startHeartbeat() {
+          this.stopHeartbeat();
+          
+          this.heartbeatTimer = setInterval(() => {
+            if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+              this.socket.send(this.options.heartbeatMessage);
+            }
+          }, this.options.heartbeatInterval);
+        }
+
+        stopHeartbeat() {
+          if (this.heartbeatTimer) {
+            clearInterval(this.heartbeatTimer);
+            this.heartbeatTimer = null;
+          }
+        }
+
+        close() {
+          this.forceClosed = true;
+          this.stopHeartbeat();
+          
+          if (this.socket) {
+            this.socket.close();
+          }
+        }
+
+        send(data) {
+          if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+            return false;
+          }
+          
+          try {
+            if (typeof data === 'object') {
+              this.socket.send(JSON.stringify(data));
+            } else {
+              this.socket.send(data);
+            }
+            return true;
+          } catch (error) {
+            return false;
+          }
+        }
+
+        onStatusChange(callback) {
+          this.statusCallback = callback;
+        }
+
+        onMessage(callback) {
+          this.messageCallback = callback;
+        }
+
+        isConnected() {
+          return this.socket !== null && this.socket.readyState === WebSocket.OPEN;
+        }
+      }
+
+      // Variables globales
+      let robustSocket = null;
+      const MAX_RECORDS = 5;
+
+      // Funciones de utilidad
+      function updateStatusIndicator(status, boxValue = '') {
+        const statusIndicator = document.getElementById('wsStatus');
+        const statusDot = statusIndicator.querySelector('.status-dot');
+        
+        statusIndicator.className = `status-indicator status-${status}`;
+        statusDot.className = `status-dot ${status}`;
+        
+        let statusText = 'Desconectado';
+        if (status === 'connected') {
+          statusText = 'Conectado';
+        } else if (status === 'error') {
+          statusText = 'Error de conexión';
+        }
+        
+        statusIndicator.innerHTML = `
+          <span class="status-dot ${status}"></span>
+          <span>${statusText}${boxValue ? ` (PC: ${boxValue})` : ''}</span>
+        `;
+      }
+
+      function conectarWebSocket(sucursal) {
+        if (robustSocket) {
+          robustSocket.close();
+        }
+        
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/prellamador/${encodeURIComponent(sucursal.toLowerCase())}`;
+        
+        robustSocket = new RobustWebSocket(wsUrl, {
+          reconnectInterval: 2000,
+          maxReconnectInterval: 30000,
+          heartbeatInterval: 25000,
+          debug: true
+        });
+        
+        robustSocket.onStatusChange((status) => {
+          updateStatusIndicator(status, localStorage.getItem('boxValue'));
+        });
+        
+        robustSocket.onMessage((data) => {
+          if (data.action === 'nuevo_registro') {
+            agregarNuevoRegistro(data.registro);
+          } else if (data.action === 'actualizar_registro') {
+            actualizarRegistro(data.registro);
+          }
+        });
+        
+        robustSocket.connect();
+      }
+
+      function agregarNuevoRegistro(registro) {
+        const tablaBody = document.getElementById('registrosTabla');
+        const sucursalActual = localStorage.getItem('sucursalValue');
+        
+        if (sucursalActual && registro.sucursal !== sucursalActual) {
+          return;
+        }
+        
+        // Verificar si el registro ya existe
+        if (document.querySelector(`tr[data-id="${registro.id}"]`)) {
+          return;
+        }
+        
+        const nuevaFila = document.createElement('tr');
+        nuevaFila.setAttribute('data-estado', 'pendiente');
+        nuevaFila.setAttribute('data-sucursal', registro.sucursal);
+        nuevaFila.setAttribute('data-id', registro.id);
+        nuevaFila.className = 'new-record';
+        
+        nuevaFila.innerHTML = `
+          <td>${registro.nombre}</td>
+          <td>${registro.dni}</td>
+          <td>${registro.fecha}</td>
+          <td>${registro.sucursal}</td>
+          <td>Pendiente</td>
+          <td>
+            <button onclick="llamarRegistro('${registro.id}')" class="btn-primary">Llamar</button>
+          </td>
+        `;
+        
+        // Insertar al principio de la tabla
+        tablaBody.insertBefore(nuevaFila, tablaBody.firstChild);
+        
+        // Mantener solo los últimos MAX_RECORDS registros
+        const filas = tablaBody.getElementsByTagName('tr');
+        while (filas.length > MAX_RECORDS) {
+          tablaBody.removeChild(filas[filas.length - 1]);
+        }
+        
+        filtrarRegistros();
+      }
+
+      function actualizarRegistro(registro) {
+        const fila = document.querySelector(`tr[data-id="${registro.id}"]`);
+        if (!fila) return;
+        
+        fila.setAttribute('data-estado', registro.llamado ? 'llamado' : 'pendiente');
+        
+        if (registro.llamado || registro.bloqueado) {
+          fila.classList.add('registro-llamado');
+          
+          const celdas = fila.getElementsByTagName('td');
+          celdas[4].innerHTML = `<span>Llamado en Box: ${registro.box_llamado}</span>`;
+          celdas[5].innerHTML = `
+            <span style="font-weight: bold; margin-right: 0.5rem;">Ya llamado</span>
+            <button onclick="repetirLlamado('${registro.id}', '${registro.sucursal}')" class="btn-warning">Repetir</button>
+          `;
+        }
+        
+        filtrarRegistros();
+      }
+
+      async function llamarRegistro(registroId) {
+        const boxValue = localStorage.getItem('boxValue');
+        const sucursalValue = localStorage.getItem('sucursalValue');
+        
+        if (!boxValue || !sucursalValue) {
+          alert('Error: No se puede realizar el llamado sin box o sucursal configurados');
+          return;
+        }
+        
+        try {
+          const formData = new FormData();
+          formData.append('registro_id', registroId);
+          formData.append('box', boxValue);
+          formData.append('sucursal', sucursalValue);
+          
+          const response = await fetch('/llamar/1', {
+            method: 'POST',
+            body: formData
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText);
+          }
+          
+          actualizarRegistro({
+            id: registroId,
+            llamado: true,
+            box_llamado: boxValue,
+            sucursal: sucursalValue
+          });
+        } catch (error) {
+          alert(`Error al realizar el llamado: ${error.message}`);
+        }
+      }
+
+      async function repetirLlamado(registroId, registroSucursal) {
+        const boxValue = localStorage.getItem('boxValue');
+        if (!boxValue) {
+          alert('Error: No se puede repetir el llamado sin box configurado');
+          return;
+        }
+        
+        try {
+          const formData = new FormData();
+          formData.append('registro_id', registroId);
+          formData.append('box', boxValue);
+          formData.append('sucursal', registroSucursal);
+          
+          const response = await fetch('/repetir-llamado/1', {
+            method: 'POST',
+            body: formData
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText);
+          }
+        } catch (error) {
+          alert(`Error al repetir el llamado: ${error.message}`);
+        }
+      }
+
+      function filtrarRegistros() {
+        const filtroSeleccionado = document.querySelector('input[name="filtro"]:checked').value;
+        const sucursalActual = localStorage.getItem('sucursalValue');
+        const filas = document.querySelectorAll('#registrosTabla tr');
+        
+        filas.forEach(fila => {
+          const estado = fila.getAttribute('data-estado');
+          const sucursalFila = fila.getAttribute('data-sucursal');
+          
+          let mostrar = true;
+          
+          if (sucursalActual && sucursalFila !== sucursalActual) {
+            mostrar = false;
+          } else if (filtroSeleccionado === 'pendientes' && estado !== 'pendiente') {
+            mostrar = false;
+          } else if (filtroSeleccionado === 'llamados' && estado !== 'llamado') {
+            mostrar = false;
+          }
+          
+          fila.style.display = mostrar ? '' : 'none';
+        });
+      }
+
+      // Inicialización
+      document.addEventListener('DOMContentLoaded', () => {
+        // Configurar modo oscuro
+        const toggleDarkMode = () => {
+          document.body.classList.toggle('dark-mode');
+          const isDark = document.body.classList.contains('dark-mode');
+          localStorage.setItem('darkMode', isDark);
+          document.getElementById('darkModeToggle').textContent = isDark ? 'Modo Claro' : 'Modo Oscuro';
+        };
+        
         if (localStorage.getItem('darkMode') === 'true') {
-            document.body.classList.add('dark-mode');
-            toggleDarkModeBtn.textContent = 'Modo Claro';
-        } else {
-            toggleDarkModeBtn.textContent = 'Modo Oscuro';
+          document.body.classList.add('dark-mode');
+          document.getElementById('darkModeToggle').textContent = 'Modo Claro';
         }
-
-        toggleDarkModeBtn.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
-            localStorage.setItem('darkMode', isDark);
-            toggleDarkModeBtn.textContent = isDark ? 'Modo Claro' : 'Modo Oscuro';
+        
+        document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
+        
+        // Configurar formulario
+        document.getElementById('configForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          
+          const boxValue = document.getElementById('boxInput').value;
+          const sucursalValue = document.getElementById('sucursalInput').value;
+          
+          localStorage.setItem('boxValue', boxValue);
+          localStorage.setItem('sucursalValue', sucursalValue);
+          
+          document.getElementById('currentBox').textContent = boxValue;
+          document.getElementById('currentSucursal').textContent = sucursalValue;
+          
+          document.getElementById('settingsPanel').classList.add('hidden');
+          document.getElementById('activeSettings').classList.remove('hidden');
+          
+          conectarWebSocket(sucursalValue);
         });
-
-        // Inicialización al cargar la página
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Página cargada, inicializando formularios y configuraciones');
-            
-            const savedBox = localStorage.getItem('boxValue');
-            const savedSucursal = localStorage.getItem('sucursalValue');
-            
-            if (savedBox && savedSucursal) {
-                // Mostrar la configuración activa
-                document.getElementById('currentBox').textContent = savedBox;
-                document.getElementById('currentSucursal').textContent = savedSucursal;
-                document.getElementById('settingsPanel').classList.add('hidden');
-                document.getElementById('activeSettings').classList.remove('hidden');
-                
-                // Establecer los valores ocultos en el formulario de llamada
-                document.getElementById('boxHidden').value = savedBox;
-                document.getElementById('sucursalHidden').value = savedSucursal;
-                
-                // Aplicar filtro por sucursal automáticamente
-                filtrarPorSucursal(savedSucursal);
-                
-                // Conectar WebSocket
-                conectarWebSocketRobusto(savedSucursal);
-            }
-            
-            // Configurar filtros
-            const filtroRadios = document.querySelectorAll('input[name="filtro"]');
-            filtroRadios.forEach(radio => {
-                radio.addEventListener('change', () => {
-                    console.log('Filtro cambiado:', radio.value);
-                    filtrarRegistros();
-                });
-            });
-
-            // Configurar el formulario de llamada
-            const llamarForm = document.getElementById('llamarForm');
-            if (llamarForm) {
-                console.log('Inicializando formulario #llamarForm');
-                llamarForm.addEventListener('submit', async function (e) {
-                    e.preventDefault();
-                    console.log('Submit disparado para formulario #llamarForm');
-
-                    const botonLlamar = e.submitter;
-                    if (!botonLlamar || !botonLlamar.value) {
-                        console.error('Error: No se pudo determinar el registro a llamar');
-                        return;
-                    }
-
-                    const registroId = botonLlamar.value;
-                    const currentBox = localStorage.getItem('boxValue') || 'default-box';
-                    const currentSucursal = localStorage.getItem('sucursalValue') || 'casa central';
-
-                    if (!registroId || !currentBox || !currentSucursal) {
-                        console.error(`Error: Faltan valores - registro_id: ${registroId}, box: ${currentBox}, sucursal: ${currentSucursal}`);
-                        alert('Error: No se puede realizar el llamado sin registro, box o sucursal');
-                        return;
-                    }
-
-                    console.log(`Enviando llamado para registro ${registroId}, box: ${currentBox}, sucursal: ${currentSucursal}`);
-
-                    const formData = new FormData();
-                    formData.append('registro_id', registroId);
-                    formData.append('box', currentBox);
-                    formData.append('sucursal', currentSucursal);
-
-                    try {
-                        const response = await fetch('/llamar/1', {
-                            method: 'POST',
-                            body: formData
-                        });
-
-                        if (response.ok) {
-                            console.log(`Llamado exitoso para registro ${registroId}`);
-                            
-                            // Actualizar la interfaz inmediatamente sin esperar al WebSocket
-                            const fila = document.querySelector(`tr[data-id="${registroId}"]`);
-                            if (fila) {
-                                fila.setAttribute('data-estado', 'llamado');
-                                fila.classList.add('registro-llamado');
-                                
-                                const celdas = fila.querySelectorAll('td');
-                                celdas[4].innerHTML = `<span class="box-info">Llamado en Box: ${currentBox}</span>`;
-                                celdas[5].innerHTML = `
-                                    <span style="color:#000000; font-weight:bold;">Ya llamado </span>
-                                    <button type="button" class="btn-repetir" data-registro-id="${registroId}" data-box="${currentBox}" data-sucursal="${currentSucursal}">Repetir</button>
-                                `;
-                                
-                                // Configurar el nuevo botón de repetir
-                                configurarBotonesRepetir();
-                                
-                                const filtroSeleccionado = document.querySelector('input[name="filtro"]:checked').value;
-                                if (filtroSeleccionado === 'pendientes') {
-                                    fila.style.display = 'none';
-                                }
-                            }
-                        } else {
-                            const errorText = await response.text();
-                            console.error(`Error en la solicitud: ${response.status} - ${errorText}`);
-                            alert(`Error al realizar el llamado: ${errorText}`);
-                        }
-                    } catch (error) {
-                        console.error(`Error al enviar la solicitud: ${error}`);
-                        alert(`Error al enviar la solicitud: ${error.message}`);
-                    }
-                });
-            }
-
-            // Configurar botones de repetir
-            configurarBotonesRepetir();
-            
-            // Añadir indicador de PC y box
-            const statusIndicator = document.getElementById('wsStatus');
-            if (statusIndicator) {
-                const pcIndicator = document.createElement('span');
-                pcIndicator.className = 'pc-indicator';
-                pcIndicator.textContent = ` (PC: ${savedBox || 'No configurado'})`;
-                statusIndicator.appendChild(pcIndicator);
-            }
+        
+        // Configurar cambio de configuración
+        document.getElementById('changeSettings').addEventListener('click', () => {
+          document.getElementById('boxInput').value = localStorage.getItem('boxValue') || '';
+          document.getElementById('sucursalInput').value = localStorage.getItem('sucursalValue') || '';
+          
+          document.getElementById('settingsPanel').classList.remove('hidden');
+          document.getElementById('activeSettings').classList.add('hidden');
         });
-
-        // Configurar botones de repetir llamado
-        function configurarBotonesRepetir() {
-            document.querySelectorAll('.btn-repetir').forEach(boton => {
-                if (boton.dataset.configured) return;
-                boton.dataset.configured = "true";
-                
-                boton.addEventListener('click', async function() {
-                    const registroId = this.dataset.registroId;
-                    const box = localStorage.getItem('boxValue') || 'default-box'; // Usar siempre el box actual de esta PC
-                    const sucursal = this.dataset.sucursal || localStorage.getItem('sucursalValue') || 'casa central';
-                    
-                    console.log(`Enviando llamado para registro ${registroId}, box: ${box}, sucursal: ${sucursal}`);
-                    
-                    const formData = new FormData();
-                    formData.append('registro_id', registroId);
-                    formData.append('box', box);
-                    formData.append('sucursal', sucursal);
-                    
-                    try {
-                        const response = await fetch('/repetir-llamado/1', {
-                            method: 'POST',
-                            body: formData
-                        });
-                        
-                        if (response.ok) {
-                            console.log(`Repetición de llamado exitosa para registro ${registroId}`);
-                            actualizarDespuesDeRepetir(registroId, box);
-                        } else {
-                            const errorText = await response.text();
-                            console.error(`Error en la solicitud: ${response.status} - ${errorText}`);
-                            alert(`Error al repetir el llamado: ${errorText}`);
-                        }
-                    } catch (error) {
-                        console.error(`Error al enviar la solicitud: ${error}`);
-                        alert(`Error al enviar la solicitud: ${error.message}`);
-                    }
-                });
-            });
+        
+        // Configurar filtros
+        document.querySelectorAll('input[name="filtro"]').forEach(radio => {
+          radio.addEventListener('change', filtrarRegistros);
+        });
+        
+        // Cargar configuración guardada
+        const savedBox = localStorage.getItem('boxValue');
+        const savedSucursal = localStorage.getItem('sucursalValue');
+        
+        if (savedBox && savedSucursal) {
+          document.getElementById('currentBox').textContent = savedBox;
+          document.getElementById('currentSucursal').textContent = savedSucursal;
+          document.getElementById('settingsPanel').classList.add('hidden');
+          document.getElementById('activeSettings').classList.remove('hidden');
+          
+          conectarWebSocket(savedSucursal);
         }
-
-        // Configurar el observador para nuevos botones
-        const observer = new MutationObserver(function (mutations) {
-            console.log('Mutación detectada en la tabla');
-            mutations.forEach(function (mutation) {
-                if (mutation.addedNodes.length) {
-                    configurarBotonesRepetir();
-                }
-            });
-        });
-
-        // Observar cambios en la tabla
-        observer.observe(document.getElementById('registrosTabla'), {
-            childList: true,
-            subtree: true
-        });
-
-        // Actualizar registros después de un llamado repetido
-        function actualizarDespuesDeRepetir(registroId, box) {
-            console.log(`Actualizando UI para registro ${registroId} con box: ${box}`);
-            const fila = document.querySelector(`tr[data-id="${registroId}"]`);
-            if (fila) {
-                const celdaEstado = fila.querySelector('td:nth-child(5)');
-                if (celdaEstado) {
-                    const spanBox = celdaEstado.querySelector('.box-info');
-                    if (spanBox) {
-                        spanBox.textContent = `Llamado en Box: ${box}`;
-                    }
-                }
-
-                const botonRepetir = fila.querySelector('.btn-repetir');
-                if (botonRepetir) {
-                    botonRepetir.dataset.box = box;
-                }
+        
+        // Manejar visibilidad de la página
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible' && robustSocket) {
+            if (!robustSocket.isConnected()) {
+              robustSocket.connect();
             }
-        }
-
-        // Guardar la configuración cuando se envía el formulario
-        document.getElementById('configForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            console.log('Formulario de configuración enviado');
-            
-            const boxValue = document.getElementById('boxInput').value;
-            const sucursalValue = document.getElementById('sucursalInput').value;
-            
-            if (boxValue && sucursalValue) {
-                console.log(`Guardando configuración - box: ${boxValue}, sucursal: ${sucursalValue}`);
-                
-                // Cerrar WebSocket anterior si existe
-                if (robustSocket) {
-                    console.log('Cerrando WebSocket anterior');
-                    robustSocket.close();
-                    robustSocket = null;
-                }
-                
-                // Guardar en localStorage
-                localStorage.setItem('boxValue', boxValue);
-                localStorage.setItem('sucursalValue', sucursalValue);
-                
-                // Actualizar la interfaz
-                document.getElementById('currentBox').textContent = boxValue;
-                document.getElementById('currentSucursal').textContent = sucursalValue;
-                document.getElementById('settingsPanel').classList.add('hidden');
-                document.getElementById('activeSettings').classList.remove('hidden');
-                
-                // Establecer los valores ocultos en el formulario de llamada
-                document.getElementById('boxHidden').value = boxValue;
-                document.getElementById('sucursalHidden').value = sucursalValue;
-                
-                // Aplicar filtro por sucursal
-                filtrarPorSucursal(sucursalValue);
-                
-                // Conectar nuevo WebSocket
-                console.log(`Conectando WebSocket para sucursal: ${sucursalValue}`);
-                conectarWebSocketRobusto(sucursalValue);
-                
-                // Actualizar indicador de PC
-                const statusIndicator = document.getElementById('wsStatus');
-                if (statusIndicator) {
-                    const pcIndicator = statusIndicator.querySelector('.pc-indicator');
-                    if (pcIndicator) {
-                        pcIndicator.textContent = ` (PC: ${boxValue})`;
-                    }
-                }
-            }
+          }
         });
-
-        // Cambiar la configuración
-        document.getElementById('changeSettings').addEventListener('click', function() {
-            console.log('Abriendo panel de configuración');
-            document.getElementById('settingsPanel').classList.remove('hidden');
-            document.getElementById('activeSettings').classList.add('hidden');
-            
-            document.getElementById('boxInput').value = localStorage.getItem('boxValue') || '';
-            document.getElementById('sucursalInput').value = localStorage.getItem('sucursalValue') || '';
-        });
-
-        // Filtrar registros según estado (pendiente/llamado)
-        function filtrarRegistros() {
-            console.log('Aplicando filtro de registros');
-            const filtroSeleccionado = document.querySelector('input[name="filtro"]:checked').value;
-            const sucursalActual = localStorage.getItem('sucursalValue');
-            const filas = document.querySelectorAll('#registrosTabla tr');
-            
-            filas.forEach(fila => {
-                const estado = fila.getAttribute('data-estado');
-                const sucursalFila = fila.getAttribute('data-sucursal');
-                
-                if (sucursalActual && sucursalFila !== sucursalActual) {
-                    fila.style.display = 'none';
-                    return;
-                }
-                
-                if (filtroSeleccionado === 'todos') {
-                    fila.style.display = '';
-                } else if (filtroSeleccionado === 'pendientes' && estado === 'pendiente') {
-                    fila.style.display = '';
-                } else if (filtroSeleccionado === 'llamados' && estado === 'llamado') {
-                    fila.style.display = '';
-                } else {
-                    fila.style.display = 'none';
-                }
-            });
-        }
-
-        // Filtrar registros por sucursal seleccionada
-        function filtrarPorSucursal(sucursal) {
-            console.log(`Filtrando por sucursal: ${sucursal}`);
-            const filas = document.querySelectorAll('#registrosTabla tr');
-            
-            filas.forEach(fila => {
-                const sucursalFila = fila.getAttribute('data-sucursal');
-                
-                if (sucursal && sucursalFila !== sucursal) {
-                    fila.style.display = 'none';
-                } else {
-                    const filtroSeleccionado = document.querySelector('input[name="filtro"]:checked').value;
-                    const estado = fila.getAttribute('data-estado');
-                    
-                    if (filtroSeleccionado === 'todos') {
-                        fila.style.display = '';
-                    } else if (filtroSeleccionado === 'pendientes' && estado === 'pendiente') {
-                        fila.style.display = '';
-                    } else if (filtroSeleccionado === 'llamados' && estado === 'llamado') {
-                        fila.style.display = '';
-                    } else {
-                        fila.style.display = 'none';
-                    }
-                }
-            });
-        }
-
-        // Función para conectar el WebSocket robusto
-        function conectarWebSocketRobusto(sucursal) {
-            // Cerrar conexión existente si hay una
-            if (robustSocket) {
-                console.log('Cerrando WebSocket anterior');
-                robustSocket.close();
-                robustSocket = null;
-            }
-            
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws/prellamador/${encodeURIComponent(sucursal.toLowerCase())}`;
-            console.log(`Conectando a WebSocket: ${wsUrl}`);
-            
-            const statusIndicator = document.getElementById('wsStatus');
-            
-            // Crear nueva instancia de WebSocket robusto
-            robustSocket = new RobustWebSocket(wsUrl, {
-                reconnectInterval: 2000,       // Empezar con 2 segundos
-                maxReconnectInterval: 30000,   // Máximo 30 segundos entre intentos
-                heartbeatInterval: 25000,      // Enviar ping cada 25 segundos
-                debug: true                    // Habilitar logs
-            });
-            
-            // Manejar cambios de estado
-            robustSocket.onStatusChange((status, event) => {
-                console.log(`Estado del WebSocket: ${status}`);
-                
-                if (status === 'connected') {
-                    statusIndicator.textContent = 'Conectado';
-                    statusIndicator.className = 'status-indicator status-connected';
-                } else if (status === 'disconnected') {
-                    statusIndicator.textContent = 'Reconectando...';
-                    statusIndicator.className = 'status-indicator status-disconnected';
-                    
-                    // Si el código de cierre es anormal, mostrar información adicional
-                    if (event && event.code !== 1000 && event.code !== 1001) {
-                        console.warn(`Cierre anormal: Código ${event.code}, Razón: ${event.reason || 'No especificada'}`);
-                    }
-                } else if (status === 'error') {
-                    statusIndicator.textContent = 'Error de conexión';
-                    statusIndicator.className = 'status-indicator status-disconnected';
-                }
-                
-                // Volver a añadir el indicador de PC
-                const pcIndicator = document.createElement('span');
-                pcIndicator.className = 'pc-indicator';
-                pcIndicator.textContent = ` (PC: ${localStorage.getItem('boxValue') || 'No configurado'})`;
-                statusIndicator.appendChild(pcIndicator);
-            });
-            
-            // Manejar mensajes recibidos
-            robustSocket.onMessage((data) => {
-                console.log('Mensaje recibido del WebSocket:', data);
-                
-                if (data.action === 'nuevo_registro') {
-                    agregarNuevoRegistro(data.registro);
-                } else if (data.action === 'actualizar_registro') {
-                    actualizarRegistro(data.registro);
-                }
-            });
-            
-            // Iniciar conexión
+        
+        // Manejar reconexión cuando hay conexión a internet
+        window.addEventListener('online', () => {
+          if (robustSocket) {
             robustSocket.connect();
-            
-            // Agregar detector de visibilidad para reconectar cuando la página vuelve a ser visible
-            document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible' && robustSocket) {
-                    console.log('Página visible, verificando conexión WebSocket');
-                    if (!robustSocket.socket || robustSocket.socket.readyState !== WebSocket.OPEN) {
-                        console.log('Reconectando WebSocket después de cambio de visibilidad');
-                        robustSocket.connect();
-                    }
-                }
-            });
-            
-            // Agregar detector de conexión de red
-            window.addEventListener('online', () => {
-                console.log('Red disponible, reconectando WebSocket');
-                if (robustSocket) {
-                    robustSocket.connect();
-                }
-            });
-            
-            return robustSocket;
-        }
-
-        // Agregar un nuevo registro a la tabla
-        function agregarNuevoRegistro(registro) {
-            console.log(`Agregando nuevo registro: ${registro.id}`);
-            const tablaBody = document.getElementById('registrosTabla');
-            const sucursalActual = localStorage.getItem('sucursalValue');
-            
-            if (sucursalActual && registro.sucursal !== sucursalActual) {
-                return;
-            }
-            
-            const registroExistente = document.querySelector(`tr[data-id="${registro.id}"]`);
-            if (registroExistente) {
-                console.log(`Registro ${registro.id} ya existe, omitiendo`);
-                return;
-            }
-            
-            const nuevaFila = document.createElement('tr');
-            nuevaFila.setAttribute('data-estado', 'pendiente');
-            nuevaFila.setAttribute('data-sucursal', registro.sucursal);
-            nuevaFila.setAttribute('data-id', registro.id);
-            nuevaFila.className = 'new-record';
-            
-            nuevaFila.innerHTML = `
-                <td>${registro.nombre}</td>
-                <td>${registro.dni}</td>
-                <td>${registro.fecha}</td>
-                <td>${registro.sucursal}</td>
-                <td>Pendiente</td>
-                <td>
-                    <button name="registro_id" value="${registro.id}" type="submit" class="btn-llamar">Llamar</button>
-                </td>
-            `;
-            
-            const filtroSeleccionado = document.querySelector('input[name="filtro"]:checked').value;
-            if (filtroSeleccionado === 'llamados') {
-                nuevaFila.style.display = 'none';
-            }
-            
-            tablaBody.prepend(nuevaFila);
-        }
-
-        // Actualizar un registro existente
-        function actualizarRegistro(registro) {
-            console.log(`Actualizando registro: ${registro.id}`);
-            const fila = document.querySelector(`tr[data-id="${registro.id}"]`);
-            if (!fila) return;
-            
-            fila.setAttribute('data-estado', registro.llamado ? 'llamado' : 'pendiente');
-            if (registro.llamado || registro.bloqueado) {
-                fila.classList.add('registro-llamado');
-                
-                const celdas = fila.querySelectorAll('td');
-                celdas[4].innerHTML = `<span class="box-info">Llamado en Box: ${registro.box_llamado}</span>`;
-                celdas[5].innerHTML = `
-                    <span style="color:#000000; font-weight:bold;">Ya llamado </span>
-                    <button type="button" class="btn-repetir" data-registro-id="${registro.id}" data-box="${registro.box_llamado || ''}" data-sucursal="${registro.sucursal || ''}">Repetir</button>
-                `;
-                
-                // Configurar el nuevo botón de repetir
-                configurarBotonesRepetir();
-                
-                const filtroSeleccionado = document.querySelector('input[name="filtro"]:checked').value;
-                if (filtroSeleccionado === 'pendientes') {
-                    fila.style.display = 'none';
-                }
-            }
-        }
-
-        // Agregar estilos CSS para el indicador de PC
-        document.addEventListener('DOMContentLoaded', function() {
-            const style = document.createElement('style');
-            style.textContent = `
-                .pc-indicator {
-                    font-size: 0.8em;
-                    opacity: 0.8;
-                    margin-left: 5px;
-                    font-weight: bold;
-                }
-                
-                .status-indicator.status-connected .pc-indicator {
-                    color: #1a4a1a;
-                }
-                
-                .status-indicator.status-disconnected .pc-indicator {
-                    color: #721c24;
-                }
-            `;
-            document.head.appendChild(style);
+          }
         });
+      });
     </script>
-</body>
+  </body>
 </html>

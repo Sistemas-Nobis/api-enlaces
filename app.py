@@ -8,6 +8,8 @@ from fastapi.templating import Jinja2Templates
 from uuid import uuid4
 import requests
 from funciones import obtener_token_wise
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.inmemory import InMemoryBackend
 
 # No Docs
 app = FastAPI(docs_url=None, redoc_url=None)
@@ -47,6 +49,9 @@ def iniciar_db():
     conn.close()
 
 iniciar_db()
+
+# Configurar FastAPICache al crear la aplicación
+FastAPICache.init(InMemoryBackend())
 
 # Función para buscar el alias en todas las tablas
 def buscar_alias(alias: str):
@@ -179,6 +184,7 @@ def ver_llamador(request: Request, id: int):
         "sucursal": id_to_sucursal[id]
     })
 
+import re
 
 # === Webhook ===
 @app.post("/webhook/{id}")
@@ -228,7 +234,7 @@ async def recibir_webhook(request: Request, id: int, token: str = Depends(obtene
 
     nuevo_registro = {
         "id": uuid4().hex,
-        "nombre": data_contacto["name"],
+        "nombre": re.sub(r'\d+', '', data_contacto["name"]).strip(),
         "dni": data_contacto["personal_id"],
         "fecha": now,
         "sucursal": sucursal.lower(),
