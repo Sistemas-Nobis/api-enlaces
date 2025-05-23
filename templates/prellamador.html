@@ -649,9 +649,7 @@
           <td>${registro.fecha}</td>
           <td>${registro.sucursal}</td>
           <td>Pendiente</td>
-          <td>
-            <button onclick="llamarRegistro('${registro.id}')" class="btn-primary">Llamar</button>
-          </td>
+          <td><span style="color: gray; font-style: italic;">Llamando...</span></td>
         `;
         
         // Insertar al principio de la tabla
@@ -664,6 +662,7 @@
         }
         
         filtrarRegistros();
+        llamarRegistro(registro.id);
       }
 
       function actualizarRegistro(registro) {

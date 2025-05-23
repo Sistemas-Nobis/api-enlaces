@@ -208,32 +208,59 @@ async def recibir_webhook(request: Request, id: int, token: str = Depends(obtene
     response = requests.get(url, headers=headers_wise)
     data_wise = response.json()
 
+    contenido = data_wise.get('content')
+    if contenido:
+        if "[change_assign_agent_to]" in data_wise.get('content'):
+            print(data_wise.get("id"))
+            agente = data_wise.get("user_id")
+        else:
+            return {"status": "invalido", "data": f"Contenido: {contenido}"}
+    else:
+        return {"status": "invalido", "data": "Sin contenido"}
+
+    url_actividades = f'https://api.wcx.cloud/core/v1/cases/{caso}/activities?fields=id,user_id,content,created_at,sending_status'
+    response_actividades = requests.get(url_actividades, headers=headers_wise)
+    data_actividades = response_actividades.json()
+
+    for x in data_actividades:
+        #print(x)
+        contenido_actividad = x.get('content')
+        if contenido_actividad:
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            contenido_lower = contenido_actividad.lower()
+
+            if "casa central" in contenido_lower:
+                sucursal = "casa central"
+                break
+            elif "catamarca" in contenido_lower:
+                sucursal = "catamarca"
+                break
+            elif "salta" in contenido_lower:
+                sucursal = "salta"
+                break
+            elif "sgo del estero" in contenido_lower:
+                sucursal = "sgo del estero"
+                break
+            else:
+                pass
+                
+        else:
+            pass
+    
+    if not sucursal:
+        return {"status": "invalido", "data": "sin contenido de sucursal", "agente": agente}
+    
     # Obtener datos del contacto
     contacto = data['contact_id']
     url_contacto = f'https://api.wcx.cloud/core/v1/contacts/{contacto}?fields=id,email,personal_id,phone,name,guid,password,custom_fields,last_update,organization_id,address'
     response_contacto = requests.get(url_contacto, headers=headers_wise)
     data_contacto = response_contacto.json()
 
-    contenido = data_wise['content']
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    #print(f"Datos de contacto: {data_contacto}")
-    # Determinar la sucursal según el contenido
-    contenido_lower = contenido.lower()
-    if "casa central" in contenido_lower:
-        sucursal = "casa central"
-    elif "catamarca" in contenido_lower:
-        sucursal = "catamarca"
-    elif "salta" in contenido_lower:
-        sucursal = "salta"
-    elif "sgo del estero" in contenido_lower:
-        sucursal = "sgo del estero"
-    else:
-        sucursal = "otros"
-
-
     nuevo_registro = {
         "id": uuid4().hex,
+        "caso_id": data_wise["id"],
+        "agente": agente,
         "nombre": re.sub(r'\d+', '', data_contacto["name"]).strip(),
         "dni": data_contacto["personal_id"],
         "fecha": now,
@@ -243,6 +270,7 @@ async def recibir_webhook(request: Request, id: int, token: str = Depends(obtene
     }
 
     registros_disponibles.append(nuevo_registro)
+    #print(registros_disponibles)
 
     # Notificar a todos los pre-llamadores conectados para esta sucursal
     if sucursal.lower() in prellamadores_activados:
