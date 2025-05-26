@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from uuid import uuid4
 import requests
-from funciones import obtener_token_wise
+from funciones import obtener_token_wise, buscar_usuario
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
 
@@ -304,13 +304,16 @@ def pre_llamador_post(request: Request, id: int, box: str = Form(...), sucursal:
 # === POST: Llamar a un paciente (marca como llamado y envía a llamador) ===
 # Modificar la función llamar_registro
 @app.post("/llamar/{id}")
-async def llamar_registro(request: Request, id: int, registro_id: str = Form(...), box: str = Form(...), sucursal: str = Form(...)):
+async def llamar_registro(request: Request, id: int, registro_id: str = Form(...), sucursal: str = Form(...)): #box: str = Form(...)
     for reg in registros_disponibles:
         if reg["id"] == registro_id and not reg.get("llamado", False):
             # Marcar como llamado
             reg["llamado"] = True
             reg["bloqueado"] = True
-            reg["box_llamado"] = box
+            agente_id = reg["agente"]
+            #reg["box_llamado"] = box
+
+            box = buscar_usuario(agente_id)
             
             # Enviar al llamador por WebSocket
             key = f"box_{sucursal.lower()}"
