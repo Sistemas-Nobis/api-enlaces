@@ -44,6 +44,19 @@ def iniciar_db():
                         alias VARCHAR(50) NOT NULL,
                         fecha_solicitud TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS registros_llamador (
+                        id VARCHAR(50) PRIMARY KEY,
+                        caso_id VARCHAR(25) NOT NULL,
+                        agente VARCHAR(25) NOT NULL,
+                        nombre VARCHAR(50) NOT NULL,
+                        dni VARCHAR(20) NOT NULL,
+                        fecha VARCHAR(20) NOT NULL,
+                        sucursal VARCHAR(50) NOT NULL,
+                        bloqueado BOOLEAN DEFAULT FALSE,
+                        llamado BOOLEAN DEFAULT FALSE,
+                        box_llamado VARCHAR(10),
+                        box_repite VARCHAR(10)
+                    );''')
     conn.commit()
     cursor.close()
     conn.close()
@@ -114,6 +127,104 @@ llamadores_activados = {}  # clave: box_sucursal → websocket
 prellamadores_activados = {}  # clave: sucursal → lista de websockets
 websockets_conectados = []
 
+# Funciones para manejar los registros del prellamador en la base de datos
+def obtener_ultimos_registros(sucursal=None, limit=5):
+    conn = datos_conexion()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    try:
+        if sucursal:
+            query = "SELECT * FROM registros_llamador WHERE sucursal = %s ORDER BY fecha DESC LIMIT %s"
+            cursor.execute(query, (sucursal.lower(), limit))
+        else:
+            query = "SELECT * FROM registros_llamador ORDER BY fecha DESC LIMIT %s"
+            cursor.execute(query, (limit,))
+        
+        registros = cursor.fetchall()
+        # Convertir valores booleanos de MySQL (0/1) a Python (False/True)
+        for registro in registros:
+            registro['bloqueado'] = bool(registro['bloqueado'])
+            registro['llamado'] = bool(registro['llamado'])
+        
+        return registros
+    finally:
+        cursor.close()
+        conn.close()
+
+def guardar_registro(registro):
+    conn = datos_conexion()
+    cursor = conn.cursor()
+    try:
+        query = """
+        INSERT INTO registros_llamador 
+        (id, caso_id, agente, nombre, dni, fecha, sucursal, bloqueado, llamado, box_llamado, box_repite) 
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        cursor.execute(query, (
+            registro["id"],
+            registro["caso_id"],
+            registro["agente"],
+            registro["nombre"],
+            registro["dni"],
+            registro["fecha"],
+            registro["sucursal"],
+            registro.get("bloqueado", False),
+            registro.get("llamado", False),
+            registro.get("box_llamado", None),
+            registro.get("box_repite", None)
+        ))
+        conn.commit()
+        return True
+    except Exception as e:
+        conn.rollback()
+        print(f"Error al guardar registro: {e}")
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+def actualizar_registro(registro_id, datos_actualizados):
+    conn = datos_conexion()
+    cursor = conn.cursor()
+    try:
+        # Construir la consulta de actualización dinámicamente
+        campos = []
+        valores = []
+        
+        for campo, valor in datos_actualizados.items():
+            campos.append(f"{campo} = %s")
+            valores.append(valor)
+        
+        # Añadir el ID al final de los valores
+        valores.append(registro_id)
+        
+        query = f"UPDATE registros_llamador SET {', '.join(campos)} WHERE id = %s"
+        cursor.execute(query, valores)
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception as e:
+        conn.rollback()
+        print(f"Error al actualizar registro: {e}")
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+def obtener_registro_por_id(registro_id):
+    conn = datos_conexion()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    try:
+        query = "SELECT * FROM registros_llamador WHERE id = %s"
+        cursor.execute(query, (registro_id,))
+        registro = cursor.fetchone()
+        if registro:
+            # Convertir valores booleanos de MySQL (0/1) a Python (False/True)
+            registro['bloqueado'] = bool(registro['bloqueado'])
+            registro['llamado'] = bool(registro['llamado'])
+        return registro
+    finally:
+        cursor.close()
+        conn.close()
+
 # === WebSocket llamador ===
 @app.websocket("/ws/{sucursal}")
 async def websocket_llamador(websocket: WebSocket, sucursal: str):
@@ -155,16 +266,24 @@ async def websocket_prellamador(websocket: WebSocket, sucursal: str):
     
     prellamadores_activados[sucursal.lower()].append(websocket)
     
+    # Enviar los últimos registros al conectarse
+    registros = obtener_ultimos_registros(sucursal.lower())
+    await websocket.send_json({
+        "action": "initial_data",
+        "registros": registros
+    })
+    
     try:
         # Mantenemos el socket abierto
         while True:
-            await websocket.receive_text()
+            data = await websocket.receive_text()
+            if data == 'ping':
+                await websocket.send_text('pong')
     except WebSocketDisconnect:
         # Eliminar de la lista cuando se desconecta
         if sucursal.lower() in prellamadores_activados:
             if websocket in prellamadores_activados[sucursal.lower()]:
                 prellamadores_activados[sucursal.lower()].remove(websocket)
-
 
 
 @app.get("/llamador/{id}", response_class=HTMLResponse)
@@ -179,21 +298,42 @@ def ver_llamador(request: Request, id: int):
     if id not in id_to_sucursal:
         raise HTTPException(status_code=404, detail="Sucursal no válida")
 
-    return templates.TemplateResponse("llamador.html", {
-        "request": request,
-        "sucursal": id_to_sucursal[id]
-    })
+    if id_to_sucursal[1] == id_to_sucursal[id]:
+        return templates.TemplateResponse("llamador_doble_sin_video.html", { # Casa central
+            "request": request,
+            "sucursal": id_to_sucursal[id]
+        })
+    elif id_to_sucursal[2] == id_to_sucursal[id]:
+        return templates.TemplateResponse("llamador_doble.html", { # Santiago del estero
+            "request": request,
+            "sucursal": id_to_sucursal[id]
+        })
+    elif id_to_sucursal[3] == id_to_sucursal[id]:
+        return templates.TemplateResponse("llamador_solo.html", { # Salta
+            "request": request,
+            "sucursal": id_to_sucursal[id]
+        })
+    elif id_to_sucursal[4] == id_to_sucursal[id]:
+        return templates.TemplateResponse("llamador_doble.html", { # Catamarca
+            "request": request,
+            "sucursal": id_to_sucursal[id]
+        })
+    else:
+        return templates.TemplateResponse("llamador_doble.html", {
+            "request": request,
+            "sucursal": id_to_sucursal[id]
+        })
 
 import re
 
 # === Webhook ===
 @app.post("/webhook/{id}")
 async def recibir_webhook(request: Request, id: int, token: str = Depends(obtener_token_wise)):
+
     if id != 1:
         return {"status": "ignorado"}
 
     data = await request.json()
-
     headers_wise = {
         'Content-Type': 'application/json',
         'Authorization': f'Bearer {token}',
@@ -209,53 +349,43 @@ async def recibir_webhook(request: Request, id: int, token: str = Depends(obtene
     data_wise = response.json()
 
     contenido = data_wise.get('content')
-    if contenido:
-        if "[change_assign_agent_to]" in data_wise.get('content'):
-            print(data_wise.get("id"))
-            agente = data_wise.get("user_id")
-        else:
-            return {"status": "invalido", "data": f"Contenido: {contenido}"}
-    else:
-        return {"status": "invalido", "data": "Sin contenido"}
+    if not contenido or "[change_assign_agent_to]" not in contenido:
+        return {"status": "invalido", "data": contenido or "Sin contenido"}
 
+    agente = data_wise.get("user_id")
+
+    # Buscar sucursal
     url_actividades = f'https://api.wcx.cloud/core/v1/cases/{caso}/activities?fields=id,user_id,content,created_at,sending_status'
     response_actividades = requests.get(url_actividades, headers=headers_wise)
     data_actividades = response_actividades.json()
 
+    sucursal = None
     for x in data_actividades:
-        #print(x)
-        contenido_actividad = x.get('content')
-        if contenido_actividad:
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            
-            contenido_lower = contenido_actividad.lower()
+        contenido_actividad = x.get('content', '').lower()
+        if "casa central" in contenido_actividad:
+            sucursal = "casa central"
+            break
+        elif "catamarca" in contenido_actividad:
+            sucursal = "catamarca"
+            break
+        elif "salta" in contenido_actividad:
+            sucursal = "salta"
+            break
+        elif "sgo del estero" in contenido_actividad:
+            sucursal = "sgo del estero"
+            break
 
-            if "casa central" in contenido_lower:
-                sucursal = "casa central"
-                break
-            elif "catamarca" in contenido_lower:
-                sucursal = "catamarca"
-                break
-            elif "salta" in contenido_lower:
-                sucursal = "salta"
-                break
-            elif "sgo del estero" in contenido_lower:
-                sucursal = "sgo del estero"
-                break
-            else:
-                pass
-                
-        else:
-            pass
-    
     if not sucursal:
         return {"status": "invalido", "data": "sin contenido de sucursal", "agente": agente}
-    
-    # Obtener datos del contacto
+
+    # Obtener contacto
     contacto = data['contact_id']
     url_contacto = f'https://api.wcx.cloud/core/v1/contacts/{contacto}?fields=id,email,personal_id,phone,name,guid,password,custom_fields,last_update,organization_id,address'
     response_contacto = requests.get(url_contacto, headers=headers_wise)
     data_contacto = response_contacto.json()
+
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    box = buscar_usuario(agente)
 
     nuevo_registro = {
         "id": uuid4().hex,
@@ -265,14 +395,32 @@ async def recibir_webhook(request: Request, id: int, token: str = Depends(obtene
         "dni": data_contacto["personal_id"],
         "fecha": now,
         "sucursal": sucursal.lower(),
-        "bloqueado": False,
-        "llamado": False
+        "bloqueado": True,
+        "llamado": True,
+        "box_llamado": box
     }
 
-    registros_disponibles.append(nuevo_registro)
-    #print(registros_disponibles)
+    guardar_registro(nuevo_registro)
 
-    # Notificar a todos los pre-llamadores conectados para esta sucursal
+    key = f"box_{sucursal.lower()}"
+    mensaje = {
+        "id": nuevo_registro["id"],
+        "name": nuevo_registro["nombre"],
+        "dni": nuevo_registro["dni"],
+        "fecha": nuevo_registro["fecha"],
+        "descripcion": nuevo_registro["sucursal"],
+        "box": box
+    }
+
+    # Enviar a llamadores activos
+    if key in llamadores_activados:
+        for ws in llamadores_activados[key]:
+            try:
+                await ws.send_json(mensaje)
+            except:
+                continue
+
+    # (Opcional) seguir notificando a prellamadores solo para visibilidad
     if sucursal.lower() in prellamadores_activados:
         notificacion = {
             "action": "nuevo_registro",
@@ -282,17 +430,17 @@ async def recibir_webhook(request: Request, id: int, token: str = Depends(obtene
             try:
                 await ws.send_json(notificacion)
             except:
-                continue  # Si falla, continuamos con el siguiente websocket
+                continue
 
-
-    return {"status": "registrado", "data": nuevo_registro}
+    return {"status": "llamado_directo", "data": nuevo_registro}
 
 
 # === GET: Pre-llamador con formulario y registros (mostrando todos) ===
 @app.get("/pre-llamador/{id}", response_class=HTMLResponse)
 def pre_llamador_get(request: Request, id: int):
     # Enviar TODOS los registros, no solo los no bloqueados
-    return templates.TemplateResponse("prellamador.html", {"request": request, "registros": registros_disponibles})
+    registros = obtener_ultimos_registros(limit=10)
+    return templates.TemplateResponse("prellamador.html", {"request": request, "registros": registros})
 
 # === POST: Selecciona box/sucursal (solo guardar datos en sesión si aplica) ===
 @app.post("/pre-llamador/{id}")
@@ -305,57 +453,67 @@ def pre_llamador_post(request: Request, id: int, box: str = Form(...), sucursal:
 # Modificar la función llamar_registro
 @app.post("/llamar/{id}")
 async def llamar_registro(request: Request, id: int, registro_id: str = Form(...), sucursal: str = Form(...)): #box: str = Form(...)
-    for reg in registros_disponibles:
-        if reg["id"] == registro_id and not reg.get("llamado", False):
-            # Marcar como llamado
-            reg["llamado"] = True
-            reg["bloqueado"] = True
-            agente_id = reg["agente"]
-            #reg["box_llamado"] = box
+    registro = obtener_registro_por_id(registro_id)
+    if registro and not registro.get("llamado", False):
+        # Marcar como llamado
+        #reg["llamado"] = True
+        #reg["bloqueado"] = True
 
-            box = buscar_usuario(agente_id)
+        agente_id = registro["agente"]
+        #reg["box_llamado"] = box
+
+        box = buscar_usuario(agente_id)
+        datos_actualizados = {
+            "llamado": True,
+            "bloqueado": True,
+            "box_llamado": box
+        }
+        actualizar_registro(registro_id, datos_actualizados)
+        
+        # Actualizar el registro con los nuevos datos
+        registro.update(datos_actualizados)
+
+        # Enviar al llamador por WebSocket
+        key = f"box_{sucursal.lower()}"
+        mensaje = {
+            "id": registro["id"],
+            "name": registro["nombre"],
+            "dni": registro["dni"],
+            "fecha": registro["fecha"],
+            "descripcion": registro["sucursal"],
+            "box": box
+        }
             
-            # Enviar al llamador por WebSocket
-            key = f"box_{sucursal.lower()}"
-            mensaje = {
-                "id": reg["id"],
-                "name": reg["nombre"],
-                "dni": reg["dni"],
-                "fecha": reg["fecha"],
-                "descripcion": reg["sucursal"],
-                "box": box
+        # Enviar a TODOS los llamadores conectados para esta sucursal
+        if key in llamadores_activados and llamadores_activados[key]:
+            websockets_con_error = []
+            for idx, ws in enumerate(llamadores_activados[key]):
+                try:
+                    await ws.send_json(mensaje)
+                    print(f"Mensaje enviado a llamador {idx+1} de {key}")
+                except Exception as e:
+                    print(f"Error al enviar a llamador {idx+1}: {e}")
+                    websockets_con_error.append(ws)
+                
+            # Limpiar websockets con error
+            for ws in websockets_con_error:
+                if ws in llamadores_activados[key]:
+                    llamadores_activados[key].remove(ws)
+            
+        # Notificar a los pre-llamadores (código existente)
+        if sucursal.lower() in prellamadores_activados:
+            notificacion = {
+                "action": "actualizar_registro",
+                "registro": registro
             }
-            
-            # Enviar a TODOS los llamadores conectados para esta sucursal
-            if key in llamadores_activados and llamadores_activados[key]:
-                websockets_con_error = []
-                for idx, ws in enumerate(llamadores_activados[key]):
-                    try:
-                        await ws.send_json(mensaje)
-                        print(f"Mensaje enviado a llamador {idx+1} de {key}")
-                    except Exception as e:
-                        print(f"Error al enviar a llamador {idx+1}: {e}")
-                        websockets_con_error.append(ws)
+            for ws in prellamadores_activados[sucursal.lower()]:
+                try:
+                    await ws.send_json(notificacion)
+                except:
+                    continue
                 
-                # Limpiar websockets con error
-                for ws in websockets_con_error:
-                    if ws in llamadores_activados[key]:
-                        llamadores_activados[key].remove(ws)
-            
-            # Notificar a los pre-llamadores (código existente)
-            if sucursal.lower() in prellamadores_activados:
-                notificacion = {
-                    "action": "actualizar_registro",
-                    "registro": reg
-                }
-                for ws in prellamadores_activados[sucursal.lower()]:
-                    try:
-                        await ws.send_json(notificacion)
-                    except:
-                        continue
-                
-            break
     return RedirectResponse("/pre-llamador/1", status_code=303)
+
 
 
 @app.post("/repetir-llamado/{id}")
@@ -372,28 +530,27 @@ async def repetir_llamado(
     if not registro_id or not box or not sucursal:
         raise HTTPException(status_code=400, detail="Faltan parámetros requeridos: registro_id, box o sucursal")
 
-    # Buscar el registro existente
-    registro_encontrado = None
-    for reg in registros_disponibles:
-        if reg["id"] == registro_id:
-            registro_encontrado = reg
-            break
-
-    if not registro_encontrado:
+    # Buscar el registro en la base de datos
+    registro = obtener_registro_por_id(registro_id)
+    
+    if not registro:
         print(f"No se encontró el registro con ID {registro_id}")
         raise HTTPException(status_code=404, detail=f"Registro con ID {registro_id} no encontrado")
 
-    # Actualizar el box de llamado
-    registro_encontrado["box_llamado"] = box
+    # Actualizar el box de llamado en la base de datos
+    actualizar_registro(registro_id, {"box_repite": box})
+    
+    # Actualizar el registro con el nuevo box
+    registro["box_llamado"] = box
 
     # Enviar a TODOS los llamadores activos de la sucursal
     key = f"box_{sucursal.lower()}"
     mensaje = {
-        "id": registro_encontrado["id"],
-        "name": registro_encontrado["nombre"],
-        "dni": registro_encontrado["dni"],
-        "fecha": registro_encontrado["fecha"],
-        "descripcion": registro_encontrado["sucursal"],
+        "id": registro["id"],
+        "name": registro["nombre"],
+        "dni": registro["dni"],
+        "fecha": registro["fecha"],
+        "descripcion": registro["sucursal"],
         "box": box,
         "repetido": True
     }
@@ -422,7 +579,7 @@ async def repetir_llamado(
     if sucursal.lower() in prellamadores_activados:
         notificacion = {
             "action": "actualizar_registro",
-            "registro": registro_encontrado
+            "registro": registro
         }
         for prellamador_ws in prellamadores_activados[sucursal.lower()]:
             try:
@@ -440,7 +597,8 @@ async def diagnostico(id: int):
     """Ruta para diagnosticar las conexiones WebSocket activas"""
     resultado = {
         "llamadores": {},
-        "prellamadores": {}
+        "prellamadores": {},
+        "registros_db": len(obtener_ultimos_registros(limit=100))
     }
     
     # Contar llamadores activos
@@ -452,3 +610,26 @@ async def diagnostico(id: int):
         resultado["prellamadores"][key] = len(conexiones)
     
     return resultado
+
+
+@app.websocket("/ws/llamador-inicial/{sucursal}")
+async def websocket_llamador_inicial(websocket: WebSocket, sucursal: str):
+    await websocket.accept()
+    registros = obtener_ultimos_registros(sucursal.lower(), limit=5)
+
+    # Enviar solo los que tienen box_llamado (ya llamados)
+    llamados = [r for r in registros if r["llamado"] and r["box_llamado"]]
+
+    await websocket.send_json({
+        "action": "historico",
+        "registros": llamados
+    })
+
+    # Mantener conexión solo si quieres interacción futura
+    while True:
+        try:
+            data = await websocket.receive_text()
+            if data == 'ping':
+                await websocket.send_text('pong')
+        except WebSocketDisconnect:
+            break

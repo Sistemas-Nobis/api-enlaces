@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+  <audio id="sonido-alerta" src="/static/airport_call.mp3" preload="auto" type="audio/mpeg"></audio>
+  <title>Nobis Medical</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Open Sans", sans-serif;
+      font-optical-sizing: auto;
+      font-weight: 800;
+      font-style: normal;
+      font-variation-settings:
+        "wdth" 100;
+      display: flex;
+      min-height: 100vh;
+      color: white;
+    }
+
+    html, body {
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .left-panel {
+        width: 40%;
+        background-color: #fff;
+        padding: 15px;
+        padding-top: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .left-panel::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url("/static/llamador/fondo.png");
+      background-repeat: no-repeat;
+      background-position: left;
+      background-size: contain;
+      opacity: 1; /* 💡 Marca de agua suave */
+      z-index: 0;
+    }
+
+    .left-panel > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .left-panel h1 {
+      color: #69B53A;
+      font-size: 24px;
+      margin-top: 20px;
+    }
+
+    .left-panel h2 {
+      margin: 20px 0;
+      color: #33A34D;
+    }
+
+    .main-content {
+      width: 70%;
+      display: flex;
+      flex-direction: column;
+      height: 100vh; /* 👈 clave */
+      margin-right: 5px;
+    }
+
+    .video-section {
+      flex: 1 1 70%;
+      z-index: 1;
+      margin-top: 5px;
+    }
+
+    .video-section video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .logo-contenedor {
+      width: 100%;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .logo-img {
+      width: 120%;
+      display: block;
+      margin-top: 0;
+      padding-top: 0;
+      margin-left: 10px;
+    }
+
+    .fecha {
+      color: #33A34D;
+      font-size: 40px;
+      text-align: center;
+    }
+
+    .doctora-img {
+      width: 90%;
+      max-width: 260px;
+      padding-bottom: 0px;
+    }
+
+    .info-section {
+      flex: 1 1 30%;
+      display: flex;
+      gap: 5px;
+      padding: 8px 2px;
+      background-color: white;
+    }
+
+    .info-box {
+        flex: 1;
+        background: linear-gradient(to bottom, #2ea836 0%, #1e8a2a 100%);
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-size: 20px;
+        text-align: center;
+        border-radius: 4px;
+    }
+
+    .icono-box {
+      position: absolute;
+      top: 50px;
+      left: 0px;
+      width: 90px;
+      height: auto;
+      z-index: 2;
+    }
+
+    .info-box strong {
+      font-size: 40px;
+      margin-bottom: 1px;
+      margin-top: 50px;
+      display: block;
+    }
+
+    .info-box span {
+      font-size: 30px;
+      line-height: 1.4;
+    }
+
+    .btn-sonido {
+      margin: 2px 0;
+      padding: 4px 8px;
+      background-color: #33a34d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 10px;
+    }
+
+    .resaltado {
+      animation: brillar 1.5s ease-in-out;
+    }
+
+    @keyframes brillar {
+      0% {
+        box-shadow: 0 0 0px rgba(50, 255, 50, 0);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(50, 255, 50, 0.8);
+        transform: scale(1.02);
+      }
+      100% {
+        box-shadow: 0 0 0px rgba(50, 255, 50, 0);
+        transform: scale(1);
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+    <div class="left-panel">
+
+      <div class="logo-content">
+        <img src="/static/llamador/logo.png" alt="Logo Nobis" class="logo-img" />
+      </div>
+        
+      <div class="top-content">
+          <h2 class="fecha" id="fecha-hoy"></h2>
+      </div>
+
+      <button id="activar-sonido" class="btn-sonido">🔊 Activar sonido</button>
+
+      <img src="/static\llamador\mujer.png" alt="Doctora" class="doctora-img" />
+    
+    </div>
+
+  <div class="main-content">
+    <div class="video-section">
+      <iframe
+        width="100%"
+        height="100%"
+        src="https://www.youtube.com/embed/wQUT9poO-dc_U?autoplay=1&mute=1&controls=0&loop=1&playlist=wQUT9poO-dc"
+        title="Video de YouTube"
+        frameborder="0"
+        allow="autoplay; encrypted-media"
+        allowfullscreen
+        style="border-radius: 10px; overflow: hidden;"
+      ></iframe>
+    </div>
+
+
+    <div class="info-section">
+      <div class="info-box" id="box-1">
+        <img src="/static/llamador/simbolo_box.png" alt="Icono Ñ" class="icono-box" />
+        <span id="nombre-box-1">--</span>
+        <strong>BOX 1</strong>
+      </div>
+      <div class="info-box" id="box-2">
+        <img src="/static/llamador/simbolo_box.png" alt="Icono Ñ" class="icono-box" />
+        <span id="nombre-box-2">--</span>
+        <strong>BOX 2</strong>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>
+
+<script>
+  // Mostrar fecha actual en formato español
+  document.getElementById("fecha-hoy").textContent = new Date().toLocaleDateString("es-AR", {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  // Funcionalidad del llamador
+  class RobustWebSocket {
+    constructor(url, options = {}) {
+      this.url = url;
+      this.options = Object.assign({
+        reconnectInterval: 1000,
+        maxReconnectInterval: 30000,
+        reconnectDecay: 1.5,
+        maxReconnectAttempts: 0,
+        heartbeatInterval: 30000,
+        heartbeatMessage: 'ping',
+        debug: true
+      }, options);
+
+      this.reconnectAttempts = 0;
+      this.reconnectInterval = this.options.reconnectInterval;
+      this.heartbeatTimer = null;
+      this.socket = null;
+      this.forceClosed = false;
+      this.statusCallback = null;
+      this.messageCallback = null;
+
+      this.log('Initializing RobustWebSocket');
+    }
+
+    connect() {
+      if (this.socket && (this.socket.readyState === WebSocket.CONNECTING || this.socket.readyState === WebSocket.OPEN)) {
+        this.log('Connection already active or in progress');
+        return;
+      }
+
+      this.forceClosed = false;
+      this.log(`Connecting to ${this.url}`);
+
+      if (this.statusCallback) this.statusCallback('connecting');
+
+      try {
+        this.socket = new WebSocket(this.url);
+
+        this.socket.onopen = () => {
+          this.log('Connection established');
+          this.reconnectAttempts = 0;
+          this.reconnectInterval = this.options.reconnectInterval;
+          this.startHeartbeat();
+          if (this.statusCallback) this.statusCallback('connected');
+        };
+
+        this.socket.onmessage = (event) => {
+          if (event.data === 'pong') return;
+          if (this.messageCallback) {
+            try {
+              const data = JSON.parse(event.data);
+              this.messageCallback(data);
+            } catch (e) {
+              this.log(`Error processing message: ${e.message}`);
+              this.messageCallback(event.data);
+            }
+          }
+        };
+
+        this.socket.onclose = (event) => {
+          this.stopHeartbeat();
+          if (this.statusCallback) this.statusCallback('disconnected', event);
+          if (!this.forceClosed) this.scheduleReconnect(event);
+        };
+
+        this.socket.onerror = (error) => {
+          this.log(`WebSocket error: ${error}`);
+          if (this.statusCallback) this.statusCallback('error', error);
+        };
+      } catch (error) {
+        this.log(`Error creating WebSocket: ${error.message}`);
+        this.scheduleReconnect();
+      }
+    }
+
+    scheduleReconnect() {
+      if (this.options.maxReconnectAttempts > 0 && this.reconnectAttempts >= this.options.maxReconnectAttempts) return;
+      this.reconnectAttempts++;
+      const jitter = 0.1 * this.reconnectInterval * Math.random();
+      const delay = this.reconnectInterval + jitter;
+      this.log(`Scheduling reconnection in ${Math.round(delay)}ms`);
+      setTimeout(() => { if (!this.forceClosed) this.connect(); }, delay);
+      this.reconnectInterval = Math.min(this.reconnectInterval * this.options.reconnectDecay, this.options.maxReconnectInterval);
+    }
+
+    startHeartbeat() {
+      this.stopHeartbeat();
+      this.heartbeatTimer = setInterval(() => {
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+          this.socket.send(this.options.heartbeatMessage);
+        }
+      }, this.options.heartbeatInterval);
+    }
+
+    stopHeartbeat() {
+      if (this.heartbeatTimer) {
+        clearInterval(this.heartbeatTimer);
+        this.heartbeatTimer = null;
+      }
+    }
+
+    close() {
+      this.forceClosed = true;
+      this.stopHeartbeat();
+      if (this.socket) this.socket.close();
+    }
+
+    send(data) {
+      if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return false;
+      try {
+        this.socket.send(typeof data === 'object' ? JSON.stringify(data) : data);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    onStatusChange(callback) {
+      this.statusCallback = callback;
+    }
+
+    onMessage(callback) {
+      this.messageCallback = callback;
+    }
+
+    log(message) {
+      if (this.options.debug) console.log(`[WebSocket] ${message}`);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const sonido = document.getElementById("sonido-alerta");
+    const tabla = document.getElementById("tabla-cuerpo") || document.createElement("tbody");
+    const idToSucursal = { 1: "casa central", 2: "sgo del estero", 3: "salta", 4: "catamarca" };
+
+    let robustSocket = null;
+
+    function obtenerIdDesdeURL() {
+      const partes = window.location.pathname.split('/');
+      return parseInt(partes[partes.length - 1]);
+    }
+
+    function conectarWebSocket(sucursal) {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws/${sucursal}`;
+      robustSocket = new RobustWebSocket(wsUrl);
+
+      robustSocket.onStatusChange((estado) => {
+        console.log(`Estado de conexión: ${estado}`);
+      });
+
+      robustSocket.onMessage((data) => {
+        console.log("Mensaje recibido:", data);
+
+        const nombreFormateado = data.name.replace(" ", "<br>");
+
+        // Buscar el ID del box y actualizar
+        const spanId = `nombre-box-${data.box}`;
+        const span = document.getElementById(spanId);
+        if (span) {
+          span.innerHTML = nombreFormateado;
+        }
+        const tarjeta = span.closest(".info-box");
+        tarjeta.classList.add("resaltado");
+        setTimeout(() => tarjeta.classList.remove("resaltado"), 1500);
+
+        // Reproducir sonido
+        try {
+          sonido.pause();
+          sonido.currentTime = 0;
+          sonido.play();
+        } catch (e) {
+          console.warn("No se pudo reproducir sonido.");
+        }
+        
+      });
+
+      robustSocket.connect();
+    }
+
+    function conectarWebSocketHistorico(sucursal) {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws/llamador-inicial/${sucursal}`;
+      const ws = new WebSocket(wsUrl);
+
+      ws.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.action === "historico") {
+            payload.registros.forEach(data => {
+              const nombreFormateado = data.nombre.replace(" ", "<br>");
+              const boxDestino = data.box_repite || data.box_llamado;
+
+              const span = document.getElementById(`nombre-box-${boxDestino}`);
+              if (span) {
+                span.innerHTML = nombreFormateado;
+              }
+            });
+          }
+        } catch (e) {
+          console.warn("Error parsing historico:", e);
+        }
+      };
+    }
+
+    document.getElementById("activar-sonido").addEventListener("click", () => {
+      const sonido = document.getElementById("sonido-alerta");
+      sonido.play().then(() => {
+        sonido.pause();
+        sonido.currentTime = 0;
+        document.getElementById("activar-sonido").style.display = "none";
+      }).catch(err => {
+        console.warn("No se pudo activar el sonido:", err);
+      });
+    });
+
+    const id = obtenerIdDesdeURL();
+    const sucursal = idToSucursal[id];
+    if (sucursal) {
+      conectarWebSocket(sucursal);
+      conectarWebSocketHistorico(sucursal);
+    } else {
+      alert("Sucursal no válida o no configurada para este ID.");
+    }
+  });
+</script>

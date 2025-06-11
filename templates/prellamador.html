@@ -571,7 +571,7 @@
 
       // Variables globales
       let robustSocket = null;
-      const MAX_RECORDS = 5;
+      const MAX_RECORDS = 10;
 
       // Funciones de utilidad
       function updateStatusIndicator(status, boxValue = '') {
@@ -618,10 +618,59 @@
             agregarNuevoRegistro(data.registro);
           } else if (data.action === 'actualizar_registro') {
             actualizarRegistro(data.registro);
+          } else if (data.action === 'initial_data') {
+            // Cargar los datos iniciales de la base de datos
+            cargarRegistrosIniciales(data.registros);
           }
         });
         
         robustSocket.connect();
+      }
+
+      function cargarRegistrosIniciales(registros) {
+        const tablaBody = document.getElementById('registrosTabla');
+
+        // Limpiar la tabla antes de cargar los nuevos registros
+        tablaBody.innerHTML = '';
+
+        // Ordenar registros por fecha (más recientes primero)
+        registros.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+        // Limitar a MAX_RECORDS
+        const registrosLimitados = registros.slice(0, MAX_RECORDS);
+
+        // Agregar cada registro a la tabla
+        registrosLimitados.forEach(registro => {
+          const nuevaFila = document.createElement('tr');
+          nuevaFila.setAttribute('data-estado', registro.llamado ? 'llamado' : 'pendiente');
+          nuevaFila.setAttribute('data-sucursal', registro.sucursal);
+          nuevaFila.setAttribute('data-id', registro.id);
+
+          if (registro.llamado) {
+            nuevaFila.classList.add('registro-llamado');
+          }
+
+          nuevaFila.innerHTML = `
+            <td>${registro.nombre}</td>
+            <td>${registro.dni}</td>
+            <td>${registro.fecha}</td>
+            <td>${registro.sucursal}</td>
+            <td>${registro.llamado 
+            ? `<span>Llamado en Box: ${registro.box_repite || registro.box_llamado || 'N/D'}</span>`
+            : 'Pendiente'}</td>
+            <td>
+              ${registro.llamado 
+                ? `<span style="font-weight: bold; margin-right: 0.5rem;">Ya llamado</span>
+                  <button onclick="repetirLlamado('${registro.id}', '${registro.sucursal}')" class="btn-warning">Repetir</button>`
+                : `<button onclick="llamarRegistro('${registro.id}')" class="btn-primary">Llamar</button>`
+              }
+            </td>
+          `;
+
+          tablaBody.appendChild(nuevaFila);
+        });
+
+        filtrarRegistros();
       }
 
       function agregarNuevoRegistro(registro) {
@@ -662,7 +711,7 @@
         }
         
         filtrarRegistros();
-        llamarRegistro(registro.id);
+        //llamarRegistro(registro.id);
       }
 
       function actualizarRegistro(registro) {
@@ -675,7 +724,8 @@
           fila.classList.add('registro-llamado');
           
           const celdas = fila.getElementsByTagName('td');
-          celdas[4].innerHTML = `<span>Llamado en Box: ${registro.box_llamado}</span>`;
+          const boxMostrado = registro.box_repite || registro.box_llamado || 'N/D';
+          celdas[4].innerHTML = `<span>Llamado en Box: ${boxMostrado}</span>`;
           celdas[5].innerHTML = `
             <span style="font-weight: bold; margin-right: 0.5rem;">Ya llamado</span>
             <button onclick="repetirLlamado('${registro.id}', '${registro.sucursal}')" class="btn-warning">Repetir</button>
@@ -686,10 +736,9 @@
       }
 
       async function llamarRegistro(registroId) {
-        const boxValue = localStorage.getItem('boxValue');
         const sucursalValue = localStorage.getItem('sucursalValue');
         
-        if (!boxValue || !sucursalValue) {
+        if (!sucursalValue) {
           alert('Error: No se puede realizar el llamado sin box o sucursal configurados');
           return;
         }
@@ -697,7 +746,6 @@
         try {
           const formData = new FormData();
           formData.append('registro_id', registroId);
-          formData.append('box', boxValue);
           formData.append('sucursal', sucursalValue);
           
           const response = await fetch('/llamar/1', {
@@ -710,12 +758,6 @@
             throw new Error(errorText);
           }
           
-          actualizarRegistro({
-            id: registroId,
-            llamado: true,
-            box_llamado: boxValue,
-            sucursal: sucursalValue
-          });
         } catch (error) {
           alert(`Error al realizar el llamado: ${error.message}`);
         }
