@@ -403,7 +403,10 @@ async def recibir_webhook(request: Request, id: int, token: str = Depends(obtene
         "box_llamado": box
     }
 
-    guardar_registro(nuevo_registro)
+    if box:
+        guardar_registro(nuevo_registro)
+    else:
+        raise HTTPException(status_code=405, detail="No se encontró box del agente. Rechazado.")
 
     key = f"box_{sucursal.lower()}"
     mensaje = {
@@ -620,17 +623,27 @@ async def diagnostico(id: int):
 @app.websocket("/ws/llamador-inicial/{sucursal}")
 async def websocket_llamador_inicial(websocket: WebSocket, sucursal: str):
     await websocket.accept()
-    registros = obtener_ultimos_registros(sucursal.lower(), limit=5)
+    registros = obtener_ultimos_registros(sucursal.lower(), limit=20)  # Aumenta el límite para asegurar que tienes los más recientes de cada box
 
-    # Enviar solo los que tienen box_llamado (ya llamados)
+    # Filtra solo los que tienen llamado y box_llamado
     llamados = [r for r in registros if r["llamado"] and r["box_llamado"]]
+
+    # Quedarse solo con el registro más reciente por box_llamado
+    recientes_por_box = {}
+    for r in llamados:
+        box = r["box_llamado"]
+        # Si no está o este registro es más reciente, lo guardamos
+        if box not in recientes_por_box or r["llamado"] > recientes_por_box[box]["llamado"]:
+            recientes_por_box[box] = r
+
+    # Ordena por fecha de llamado descendente (más reciente primero)
+    resultado = sorted(recientes_por_box.values(), key=lambda x: x["llamado"], reverse=True)
 
     await websocket.send_json({
         "action": "historico",
-        "registros": llamados
+        "registros": resultado
     })
 
-    # Mantener conexión solo si quieres interacción futura
     while True:
         try:
             data = await websocket.receive_text()
