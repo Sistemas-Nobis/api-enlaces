@@ -134,7 +134,7 @@
 
     .info-box {
         flex: 1;
-        background: linear-gradient(to bottom, #2ea836 0%, #1e8a2a 100%);
+        background: linear-gradient(to bottom, #23a238 0%, #23a238 100%);
         position: relative;
         display: flex;
         flex-direction: column;
@@ -148,27 +148,24 @@
     .icono-box {
       position: absolute;
       top: 50px;
-      left: 0px;
-      width: 150px;
+      width: 220px;
       height: auto;
       z-index: 2;
     }
 
     .info-box strong {
-      font-size: 40px;
-      margin-bottom: 1px;
+      font-size: 85px;
+      position: absolute;
+      top: 0;
       margin-top: 30px;
-      display: block;
+      font-weight: normal;
     }
 
     .info-box span {
       font-size: 40px;
       line-height: 1.4;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 90%;
-      margin-top: 50px;
+      position: absolute;
+      bottom: 50px;
     }
 
     .btn-sonido {
@@ -238,9 +235,10 @@
 
     <div class="info-section">
       <div class="info-box" id="box-1">
-        <img src="/static/llamador/simbolo_box.png" alt="Icono Ñ" class="icono-box" />
-        <span id="nombre-box-1">--</span>
+        <img style="left: 0;" src="/static/llamador/simbolo_box.png" alt="Icono Ñ" class="icono-box" />
+        <img style="transform: scaleX(-1); right: 0;" src="/static/llamador/simbolo_box.png" alt="Icono Ñ" class="icono-box" />
         <strong>BOX 1</strong>
+        <span id="nombre-box-1">--</span>
       </div>
     </div>
 
@@ -412,20 +410,41 @@
       robustSocket.onMessage((data) => {
         console.log("Mensaje recibido:", data);
 
-        // Mantener el nombre completo en una sola línea
-        const nombreFormateado = data.name;
+        // 1. Manejo de eliminación de registro
+        if (data.action === 'eliminar_registro' && data.registro_id) {
+          for (let i = 1; i <= 2; i++) {
+            const span = document.getElementById(`nombre-box-${i}`);
+            if (span && span.dataset && span.dataset.id === data.registro_id) {
+              span.textContent = '-----';
+              delete span.dataset.id;
+            }
+          }
+          return;
+        }
 
-        // Buscar el ID del box y actualizar
+        // 1. Si el registro ya está en algún box, limpiá ese box
+        for (let i = 1; i <= 2; i++) {
+          const spanBox = document.getElementById(`nombre-box-${i}`);
+          if (spanBox && spanBox.dataset && spanBox.dataset.id === String(data.id)) {
+            spanBox.textContent = '-----';
+            delete spanBox.dataset.id;
+          }
+        }
+
+        // 2. Mostrar el llamado en el nuevo box
         const spanId = `nombre-box-${data.box}`;
         const span = document.getElementById(spanId);
         if (span) {
-          span.innerHTML = nombreFormateado;
+          span.textContent = data.name;
+          if (data.id) {
+            span.dataset.id = data.id; // Guarda el ID del registro
+          }
+          const tarjeta = span.closest(".info-box");
+          tarjeta.classList.add("resaltado");
+          setTimeout(() => tarjeta.classList.remove("resaltado"), 1500);
         }
-        const tarjeta = span.closest(".info-box");
-        tarjeta.classList.add("resaltado");
-        setTimeout(() => tarjeta.classList.remove("resaltado"), 1500);
 
-        // Reproducir sonido
+        // 3. Reproducir sonido
         try {
           sonido.pause();
           sonido.currentTime = 0;
@@ -433,7 +452,6 @@
         } catch (e) {
           console.warn("No se pudo reproducir sonido.");
         }
-        
       });
 
       robustSocket.connect();
@@ -449,7 +467,7 @@
           const payload = JSON.parse(event.data);
           if (payload.action === "historico") {
             payload.registros.forEach(data => {
-              const nombreFormateado = data.nombre.replace(" ", "<br>");
+              const nombreFormateado = data.nombre;
               const boxDestino = data.box_repite || data.box_llamado;
 
               const span = document.getElementById(`nombre-box-${boxDestino}`);

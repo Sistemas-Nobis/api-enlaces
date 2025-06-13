@@ -660,9 +660,10 @@
             : 'Pendiente'}</td>
             <td>
               ${registro.llamado 
-                ? `<span style="font-weight: bold; margin-right: 0.5rem;">Ya llamado</span>
-                  <button onclick="repetirLlamado('${registro.id}', '${registro.sucursal}')" class="btn-warning">Repetir</button>`
-                : `<button onclick="llamarRegistro('${registro.id}')" class="btn-primary">Llamar</button>`
+              ? `<span style="font-weight: bold; margin-right: 0.5rem;">Ya llamado</span>
+              <button onclick="repetirLlamado('${registro.id}', '${registro.sucursal}')" class="btn-warning">Repetir</button>
+              <button onclick="liberarLlamado('${registro.id}', '${registro.sucursal}')" class="btn-primary" style="background:#d32f2f; margin-left:0.5rem;">Liberar</button>`
+              : `<button onclick="repetirLlamado('${registro.id}', '${registro.sucursal}')" class="btn-primary">Llamar</button>`
               }
             </td>
           `;
@@ -676,91 +677,88 @@
       function agregarNuevoRegistro(registro) {
         const tablaBody = document.getElementById('registrosTabla');
         const sucursalActual = localStorage.getItem('sucursalValue');
-        
+
         if (sucursalActual && registro.sucursal !== sucursalActual) {
           return;
         }
-        
+
         // Verificar si el registro ya existe
         if (document.querySelector(`tr[data-id="${registro.id}"]`)) {
           return;
         }
-        
+
         const nuevaFila = document.createElement('tr');
-        nuevaFila.setAttribute('data-estado', 'pendiente');
+        nuevaFila.setAttribute('data-estado', registro.llamado ? 'llamado' : 'pendiente');
         nuevaFila.setAttribute('data-sucursal', registro.sucursal);
         nuevaFila.setAttribute('data-id', registro.id);
-        nuevaFila.className = 'new-record';
-        
+        if (registro.llamado) {
+          nuevaFila.classList.add('registro-llamado');
+        }
+        nuevaFila.classList.add('new-record');
+
+        // Usar el mismo renderizado que en cargarRegistrosIniciales
+        const boxMostrado = registro.box_repite || registro.box_llamado || 'N/D';
         nuevaFila.innerHTML = `
           <td>${registro.nombre}</td>
           <td>${registro.dni}</td>
           <td>${registro.fecha}</td>
           <td>${registro.sucursal}</td>
-          <td>Pendiente</td>
-          <td><span style="color: gray; font-style: italic;">Llamando...</span></td>
+          <td>${registro.llamado 
+            ? `<span>Llamado en Box: ${boxMostrado}</span>`
+            : 'Pendiente'}</td>
+          <td>
+            ${registro.llamado 
+              ? `<span style="font-weight: bold; margin-right: 0.5rem;">Ya llamado</span>
+                <button onclick="repetirLlamado('${registro.id}', '${registro.sucursal}')" class="btn-warning">Repetir</button>
+                <button onclick="liberarLlamado('${registro.id}', '${registro.sucursal}')" class="btn-primary" style="background:#d32f2f; margin-left:0.5rem;">Liberar</button>`
+              : `<button onclick="repetirLlamado('${registro.id}', '${registro.sucursal}')" class="btn-primary">Llamar</button>`
+            }
+          </td>
         `;
-        
+
         // Insertar al principio de la tabla
         tablaBody.insertBefore(nuevaFila, tablaBody.firstChild);
-        
+
         // Mantener solo los últimos MAX_RECORDS registros
         const filas = tablaBody.getElementsByTagName('tr');
         while (filas.length > MAX_RECORDS) {
           tablaBody.removeChild(filas[filas.length - 1]);
         }
-        
+
         filtrarRegistros();
-        //llamarRegistro(registro.id);
       }
 
       function actualizarRegistro(registro) {
         const fila = document.querySelector(`tr[data-id="${registro.id}"]`);
         if (!fila) return;
-        
+
         fila.setAttribute('data-estado', registro.llamado ? 'llamado' : 'pendiente');
-        
+        fila.setAttribute('data-sucursal', registro.sucursal);
+
+        const celdas = fila.getElementsByTagName('td');
+        // Actualizá todos los datos de la fila
+        celdas[0].textContent = registro.nombre;
+        celdas[1].textContent = registro.dni;
+        celdas[2].textContent = registro.fecha;
+        celdas[3].textContent = registro.sucursal;
+
         if (registro.llamado || registro.bloqueado) {
           fila.classList.add('registro-llamado');
-          
-          const celdas = fila.getElementsByTagName('td');
           const boxMostrado = registro.box_repite || registro.box_llamado || 'N/D';
           celdas[4].innerHTML = `<span>Llamado en Box: ${boxMostrado}</span>`;
           celdas[5].innerHTML = `
             <span style="font-weight: bold; margin-right: 0.5rem;">Ya llamado</span>
             <button onclick="repetirLlamado('${registro.id}', '${registro.sucursal}')" class="btn-warning">Repetir</button>
+            <button onclick="liberarLlamado('${registro.id}', '${registro.sucursal}')" class="btn-primary" style="background:#d32f2f; margin-left:0.5rem;">Liberar</button>
+          `;
+        } else {
+          fila.classList.remove('registro-llamado');
+          celdas[4].innerHTML = 'Pendiente';
+          celdas[5].innerHTML = `
+            <button onclick="repetirLlamado('${registro.id}', '${registro.sucursal}')" class="btn-primary">Llamar</button>
           `;
         }
-        
         filtrarRegistros();
-      }
-
-      async function llamarRegistro(registroId) {
-        const sucursalValue = localStorage.getItem('sucursalValue');
-        
-        if (!sucursalValue) {
-          alert('Error: No se puede realizar el llamado sin box o sucursal configurados');
-          return;
-        }
-        
-        try {
-          const formData = new FormData();
-          formData.append('registro_id', registroId);
-          formData.append('sucursal', sucursalValue);
-          
-          const response = await fetch('/llamar/1', {
-            method: 'POST',
-            body: formData
-          });
-          
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText);
-          }
-          
-        } catch (error) {
-          alert(`Error al realizar el llamado: ${error.message}`);
-        }
       }
 
       async function repetirLlamado(registroId, registroSucursal) {
@@ -788,6 +786,28 @@
         } catch (error) {
           alert(`Error al repetir el llamado: ${error.message}`);
         }
+      }
+
+      async function liberarLlamado(registroId, sucursal) {
+          if (!confirm('¿Seguro que deseas liberar este llamado?')) return;
+          try {
+              const formData = new FormData();
+              formData.append('registro_id', registroId);
+              formData.append('sucursal', sucursal);
+
+              const response = await fetch('/liberar-llamado/1', {
+                  method: 'POST',
+                  body: formData
+              });
+
+              if (!response.ok) {
+                  const errorText = await response.text();
+                  throw new Error(errorText);
+              }
+              // No necesitas hacer nada más aquí: la actualización llegará por WebSocket
+          } catch (error) {
+              alert(`Error al liberar el llamado: ${error.message}`);
+          }
       }
 
       function filtrarRegistros() {

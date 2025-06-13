@@ -77,12 +77,15 @@ def buscar_alias(alias: str):
 
         # Recorrer cada tabla y buscar el alias
         for (table_name,) in tables:
-            if table_name != 'log_alias':
-                query = f"SELECT original_url FROM {table_name} WHERE alias = %s"
-                cursor.execute(query, (alias,))
-                result = cursor.fetchone()
-                if result:
-                    return result[0]  # Retorna la URL si se encuentra el alias
+            if table_name not in ('log_alias', 'registros_llamador', 'usuarios', 'contador'):
+                cursor.execute(f"SHOW COLUMNS FROM {table_name}")
+                columns = [row[0] for row in cursor.fetchall()]
+                if 'original_url' in columns:
+                    query = f"SELECT original_url FROM {table_name} WHERE alias = %s"
+                    cursor.execute(query, (alias,))
+                    result = cursor.fetchone()
+                    if result:
+                        return result[0]
         return None  # Retorna None si no encuentra el alias en ninguna tabla
     finally:
         cursor.close()
@@ -237,7 +240,7 @@ async def websocket_llamador(websocket: WebSocket, sucursal: str):
     
     # Añadir este websocket a la lista
     llamadores_activados[key].append(websocket)
-    print(f"Nuevo llamador conectado para {key}. Total: {len(llamadores_activados[key])}")
+    #print(f"Nuevo llamador conectado para {key}. Total: {len(llamadores_activados[key])}")
     
     try:
         # Mantener la conexión abierta
@@ -252,7 +255,7 @@ async def websocket_llamador(websocket: WebSocket, sucursal: str):
         # Eliminar este websocket de la lista cuando se desconecta
         if key in llamadores_activados and websocket in llamadores_activados[key]:
             llamadores_activados[key].remove(websocket)
-            print(f"Llamador desconectado de {key}. Restantes: {len(llamadores_activados[key])}")
+            #print(f"Llamador desconectado de {key}. Restantes: {len(llamadores_activados[key])}")
 
 
 # === WebSocket pre-llamador (para actualización en tiempo real) ===
@@ -490,7 +493,7 @@ async def llamar_registro(request: Request, id: int, registro_id: str = Form(...
             for idx, ws in enumerate(llamadores_activados[key]):
                 try:
                     await ws.send_json(mensaje)
-                    print(f"Mensaje enviado a llamador {idx+1} de {key}")
+                    #print(f"Mensaje enviado a llamador {idx+1} de {key}")
                 except Exception as e:
                     print(f"Error al enviar a llamador {idx+1}: {e}")
                     websockets_con_error.append(ws)
@@ -515,7 +518,6 @@ async def llamar_registro(request: Request, id: int, registro_id: str = Form(...
     return RedirectResponse("/pre-llamador/1", status_code=303)
 
 
-
 @app.post("/repetir-llamado/{id}")
 async def repetir_llamado(
     request: Request,
@@ -524,7 +526,7 @@ async def repetir_llamado(
     box: str = Form(...),
     sucursal: str = Form(...)
 ):
-    print(f"Repetir llamado recibido: registro_id={registro_id}, box={box}, sucursal={sucursal}")
+    #print(f"Repetir llamado recibido: registro_id={registro_id}, box={box}, sucursal={sucursal}")
 
     # Validar entrada
     if not registro_id or not box or not sucursal:
@@ -538,10 +540,13 @@ async def repetir_llamado(
         raise HTTPException(status_code=404, detail=f"Registro con ID {registro_id} no encontrado")
 
     # Actualizar el box de llamado en la base de datos
-    actualizar_registro(registro_id, {"box_repite": box})
+    actualizar_registro(registro_id, {"llamado": True, "bloqueado": True, "box_repite": box})
     
     # Actualizar el registro con el nuevo box
-    registro["box_llamado"] = box
+    #registro["box_llamado"] = box
+
+    # Volver a obtener el registro actualizado
+    registro = obtener_registro_por_id(registro_id)
 
     # Enviar a TODOS los llamadores activos de la sucursal
     key = f"box_{sucursal.lower()}"
@@ -565,7 +570,7 @@ async def repetir_llamado(
     for idx, ws in enumerate(llamadores_activados[key]):
         try:
             await ws.send_json(mensaje)
-            print(f"Mensaje enviado a llamador {idx+1} de {key}")
+            #print(f"Mensaje enviado a llamador {idx+1} de {key}")
         except Exception as e:
             print(f"Error al enviar a llamador {idx+1}: {e}")
             websockets_con_error.append(ws)
@@ -588,7 +593,7 @@ async def repetir_llamado(
                 print(f"Error al notificar a pre-llamador: {e}")
                 continue
 
-    print(f"Repetición de llamado exitosa para registro {registro_id}")
+    #print(f"Repetición de llamado exitosa para registro {registro_id}")
     return RedirectResponse(f"/pre-llamador/{id}", status_code=303)
 
 
@@ -633,3 +638,39 @@ async def websocket_llamador_inicial(websocket: WebSocket, sucursal: str):
                 await websocket.send_text('pong')
         except WebSocketDisconnect:
             break
+
+
+@app.post("/liberar-llamado/{id}")
+async def liberar_llamado(id: int, registro_id: str = Form(...), sucursal: str = Form(...)):
+    # Actualizar el registro: dejarlo disponible
+    actualizar_registro(registro_id, {"llamado": False, "bloqueado": False, "box_repite": None})
+
+    registro = obtener_registro_por_id(registro_id)
+
+    # Notificar a prellamadores para refrescar la tabla
+    if sucursal.lower() in prellamadores_activados:
+        notificacion = {
+            "action": "actualizar_registro",
+            "registro": registro
+        }
+        for ws in prellamadores_activados[sucursal.lower()]:
+            try:
+                await ws.send_json(notificacion)
+            except:
+                continue
+            
+
+    # Notificar a llamadores para que eliminen el registro de la vista
+    key = f"box_{sucursal.lower()}"
+    if key in llamadores_activados:
+        notificacion = {
+            "action": "eliminar_registro",
+            "registro_id": registro_id
+        }
+        for ws in llamadores_activados[key]:
+            try:
+                await ws.send_json(notificacion)
+            except:
+                continue
+
+    return {"status": "liberado"}

@@ -10,10 +10,10 @@ async def obtener_token_wise():
 def buscar_usuario(agente_id):
 
     df = pd.read_excel("static/usuariosWise.xlsx")
-    print(f"Agente a buscar: {agente_id}")
+    #print(f"Agente a buscar: {agente_id}")
     for index, row in df.iterrows():
         if str(row['ID']).strip() == str(agente_id).strip():
-            print(f"ID encontrado en la fila {index}: {row.to_dict()}")
+            #print(f"ID encontrado en la fila {index}: {row.to_dict()}")
             box = row['Box']
             return box
         else:
