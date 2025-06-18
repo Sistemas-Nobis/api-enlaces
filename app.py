@@ -10,6 +10,8 @@ import requests
 from funciones import obtener_token_wise, buscar_usuario
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
+import json
+import re
 
 # No Docs
 app = FastAPI(docs_url=None, redoc_url=None)
@@ -354,6 +356,25 @@ async def recibir_webhook(request: Request, id: int, token: str = Depends(obtene
     contenido = data_wise.get('content')
     if not contenido or "[change_assign_agent_to]" not in contenido:
         return {"status": "invalido", "data": contenido or "Sin contenido"}
+    
+    # --- NUEVO BLOQUE ---
+    try:
+        contenido_json = json.loads(contenido)
+        texto_actividad = contenido_json['activity'][0]['text']
+    except Exception as e:
+        return {"status": "invalido", "data": f"Error parseando contenido: {e}"}
+
+    patron = r'(.+?)\s*\[change_assign_agent_to\]\s*(.+)'
+    coincidencia = re.search(patron, texto_actividad)
+    if not coincidencia:
+        return {"status": "invalido", "data": "No se encontró el patrón esperado en el texto de actividad"}
+
+    nombre_antes = coincidencia.group(1).strip()
+    nombre_despues = coincidencia.group(2).strip()
+
+    if nombre_antes.lower() != nombre_despues.lower():
+        return {"status": "invalido", "data": f"Nombres distintos: '{nombre_antes}' vs '{nombre_despues}'"}
+    # --- FIN NUEVO BLOQUE ---
 
     agente = data_wise.get("user_id")
 
