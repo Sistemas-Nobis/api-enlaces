@@ -301,6 +301,10 @@
         background-color: #f44336;
       }
 
+      .oculto {
+        display: none;
+      }
+
       /* Responsive */
       @media (max-width: 768px) {
         body {
@@ -395,7 +399,7 @@
               <th>Nombre</th>
               <th>DNI</th>
               <th>Fecha</th>
-              <th>Sucursal</th>
+              <th class="oculto">Sucursal</th>
               <th>Estado</th>
               <th>Acción</th>
             </tr>
@@ -411,6 +415,12 @@
     </div>
 
     <script>
+
+      function soloFecha(fechaStr) {
+        if (!fechaStr) return '';
+        return fechaStr.substring(0, 10);
+      }
+
       // Clase RobustWebSocket para manejar la conexión WebSocket
       class RobustWebSocket {
         constructor(url, options = {}) {
@@ -653,8 +663,8 @@
           nuevaFila.innerHTML = `
             <td>${registro.nombre}</td>
             <td>${registro.dni}</td>
-            <td>${registro.fecha}</td>
-            <td>${registro.sucursal}</td>
+            <td>${soloFecha(registro.fecha)}</td>
+            <td class="oculto">${registro.sucursal}</td>
             <td>${registro.llamado 
             ? `<span>Llamado en Box: ${registro.box_repite || registro.box_llamado || 'N/D'}</span>`
             : 'Pendiente'}</td>
@@ -701,8 +711,8 @@
         nuevaFila.innerHTML = `
           <td>${registro.nombre}</td>
           <td>${registro.dni}</td>
-          <td>${registro.fecha}</td>
-          <td>${registro.sucursal}</td>
+          <td>${soloFecha(registro.fecha)}</td>
+          <td class="oculto">${registro.sucursal}</td>
           <td>${registro.llamado 
             ? `<span>Llamado en Box: ${boxMostrado}</span>`
             : 'Pendiente'}</td>

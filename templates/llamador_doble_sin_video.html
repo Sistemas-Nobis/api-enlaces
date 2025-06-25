@@ -231,11 +231,29 @@
 
 <script>
   // Mostrar fecha actual en formato español
-  document.getElementById("fecha-hoy").textContent = new Date().toLocaleDateString("es-AR", {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
+  function actualizarFecha() {
+    document.getElementById("fecha-hoy").textContent = new Date().toLocaleDateString("es-AR", {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  }
+
+  // Actualiza la fecha al cargar la página
+  actualizarFecha();
+
+  // Calcula cuánto falta para la medianoche y programa la próxima actualización
+  function programarActualizacion() {
+    const ahora = new Date();
+    const manana = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 0, 0, 0, 0);
+    const msHastaMedianoche = manana - ahora;
+    setTimeout(() => {
+      actualizarFecha();
+      programarActualizacion(); // Vuelve a programar para el siguiente día
+    }, msHastaMedianoche);
+  }
+
+  programarActualizacion();
 
   // Funcionalidad del llamador
   class RobustWebSocket {

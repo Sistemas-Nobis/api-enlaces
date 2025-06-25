@@ -221,6 +221,7 @@
   <div class="main-content">
     <div class="video-section">
       <iframe
+        id="video-sucursal"
         width="100%"
         height="100%"
         src="https://www.youtube.com/embed/wQUT9poO-dc_U?autoplay=1&mute=1&controls=0&loop=1&playlist=wQUT9poO-dc"
@@ -249,11 +250,29 @@
 
 <script>
   // Mostrar fecha actual en formato español
-  document.getElementById("fecha-hoy").textContent = new Date().toLocaleDateString("es-AR", {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
+  function actualizarFecha() {
+    document.getElementById("fecha-hoy").textContent = new Date().toLocaleDateString("es-AR", {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  }
+
+  // Actualiza la fecha al cargar la página
+  actualizarFecha();
+
+  // Calcula cuánto falta para la medianoche y programa la próxima actualización
+  function programarActualizacion() {
+    const ahora = new Date();
+    const manana = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 0, 0, 0, 0);
+    const msHastaMedianoche = manana - ahora;
+    setTimeout(() => {
+      actualizarFecha();
+      programarActualizacion(); // Vuelve a programar para el siguiente día
+    }, msHastaMedianoche);
+  }
+
+  programarActualizacion();
 
   // Funcionalidad del llamador
   class RobustWebSocket {
@@ -493,8 +512,22 @@
       });
     });
 
+    const videosPorSucursal = {
+      1: "https://www.youtube.com/embed/wQUT9poO-dc_U?autoplay=1&mute=1&controls=0&loop=1&playlist=wQUT9poO-dc",
+      2: "https://www.youtube.com/embed/wQUT9poO-dc_U?autoplay=1&mute=1&controls=0&loop=1&playlist=wQUT9poO-dc",
+      3: "https://www.youtube.com/embed/wuV__Z938u4?autoplay=1&mute=1&controls=0&loop=1&playlist=wuV__Z938u4",
+      4: "https://www.youtube.com/embed/wQUT9poO-dc_U?autoplay=1&mute=1&controls=0&loop=1&playlist=wQUT9poO-dc"
+    };
+
     const id = obtenerIdDesdeURL();
     const sucursal = idToSucursal[id];
+
+    // Cambiar el video según el id
+    const iframe = document.getElementById("video-sucursal");
+    if (videosPorSucursal[id]) {
+      iframe.src = videosPorSucursal[id];
+    }
+
     if (sucursal) {
       conectarWebSocket(sucursal);
       conectarWebSocketHistorico(sucursal);
